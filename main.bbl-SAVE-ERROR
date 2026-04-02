@@ -1,0 +1,156 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.3 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{anyt/global//global/global/global}
+    \entry{zeroshot}{article}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=0b09178887db687241f0eee1aa23f8ea}{%
+           family={Hilprecht},
+           familyi={H\bibinitperiod},
+           given={Benjamin},
+           giveni={B\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=49248cdf8355c6d096189e2667358696}{%
+           family={Binnig},
+           familyi={B\bibinitperiod},
+           given={Carsten},
+           giveni={C\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {VLDB Endowment}%
+      }
+      \strng{namehash}{e52ea5f8e55e70bb5956900be90e07fd}
+      \strng{fullhash}{e52ea5f8e55e70bb5956900be90e07fd}
+      \strng{fullhashraw}{e52ea5f8e55e70bb5956900be90e07fd}
+      \strng{bibnamehash}{e52ea5f8e55e70bb5956900be90e07fd}
+      \strng{authorbibnamehash}{e52ea5f8e55e70bb5956900be90e07fd}
+      \strng{authornamehash}{e52ea5f8e55e70bb5956900be90e07fd}
+      \strng{authorfullhash}{e52ea5f8e55e70bb5956900be90e07fd}
+      \strng{authorfullhashraw}{e52ea5f8e55e70bb5956900be90e07fd}
+      \field{labelalpha}{HB22}
+      \field{sortinit}{H}
+      \field{sortinithash}{23a3aa7c24e56cfa16945d55545109b5}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{In this paper, we introduce zero-shot cost models, which enable learned cost estimation that generalizes to unseen databases. In contrast to state-of-the-art workload-driven approaches, which require to execute a large set of training queries on every new database, zero-shot cost models thus allow to instantiate a learned cost model out-of-the-box without expensive training data collection. To enable such zero-shot cost models, we suggest a new learning paradigm based on pre-trained cost models. As core contributions to support the transfer of such a pre-trained cost model to unseen databases, we introduce a new model architecture and representation technique for encoding query workloads as input to those models. As we will show in our evaluation, zero-shot cost estimation can provide more accurate cost estimates than state-of-the-art models for a wide range of (real-world) databases without requiring any query executions on unseen databases. Furthermore, we show that zero-shot cost models can be used in a few-shot mode that further improves their quality by retraining them just with a small number of additional training queries on the unseen database.}
+      \field{issn}{2150-8097}
+      \field{journaltitle}{Proc. VLDB Endow.}
+      \field{month}{7}
+      \field{number}{11}
+      \field{title}{Zero-shot cost models for out-of-the-box learned cost prediction}
+      \field{volume}{15}
+      \field{year}{2022}
+      \field{pages}{2361\bibrangedash 2374}
+      \range{pages}{14}
+      \verb{doi}
+      \verb 10.14778/3551793.3551799
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.14778/3551793.3551799
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.14778/3551793.3551799
+      \endverb
+    \endentry
+    \entry{latex}{book}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=5d77435450d10a850a5b58577b9a456b}{%
+           family={Lamport},
+           familyi={L\bibinitperiod},
+           given={Leslie},
+           giveni={L\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Addison-Wesley Professional}%
+      }
+      \strng{namehash}{5d77435450d10a850a5b58577b9a456b}
+      \strng{fullhash}{5d77435450d10a850a5b58577b9a456b}
+      \strng{fullhashraw}{5d77435450d10a850a5b58577b9a456b}
+      \strng{bibnamehash}{5d77435450d10a850a5b58577b9a456b}
+      \strng{authorbibnamehash}{5d77435450d10a850a5b58577b9a456b}
+      \strng{authornamehash}{5d77435450d10a850a5b58577b9a456b}
+      \strng{authorfullhash}{5d77435450d10a850a5b58577b9a456b}
+      \strng{authorfullhashraw}{5d77435450d10a850a5b58577b9a456b}
+      \field{labelalpha}{Lam94}
+      \field{sortinit}{L}
+      \field{sortinithash}{7c47d417cecb1f4bd38d1825c427a61a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{LaTeX : A Documentation Preparation System User's Guide and Reference Manual}
+      \field{year}{1994}
+    \endentry
+    \entry{t3}{article}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=99d1d9315de4f123b5312abb5ccf91f1}{%
+           family={Rieger},
+           familyi={R\bibinitperiod},
+           given={Maximilian},
+           giveni={M\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=856106a72d787bcea4281fca718cd7d7}{%
+           family={Neumann},
+           familyi={N\bibinitperiod},
+           given={Thomas},
+           giveni={T\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{location}{1}{%
+        {New York, NY, USA}%
+      }
+      \list{publisher}{1}{%
+        {Association for Computing Machinery}%
+      }
+      \strng{namehash}{c1ce03a3c49e4b6b00571c8a39b57e3d}
+      \strng{fullhash}{c1ce03a3c49e4b6b00571c8a39b57e3d}
+      \strng{fullhashraw}{c1ce03a3c49e4b6b00571c8a39b57e3d}
+      \strng{bibnamehash}{c1ce03a3c49e4b6b00571c8a39b57e3d}
+      \strng{authorbibnamehash}{c1ce03a3c49e4b6b00571c8a39b57e3d}
+      \strng{authornamehash}{c1ce03a3c49e4b6b00571c8a39b57e3d}
+      \strng{authorfullhash}{c1ce03a3c49e4b6b00571c8a39b57e3d}
+      \strng{authorfullhashraw}{c1ce03a3c49e4b6b00571c8a39b57e3d}
+      \field{labelalpha}{RN25}
+      \field{sortinit}{R}
+      \field{sortinithash}{5e1c39a9d46ffb6bebd8f801023a9486}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Query performance prediction is used for scheduling, resource scaling, tenant placement, and various other use-cases. Here, the main goal is to estimate the execution time of a query without running it. To be effective, predictors need to be both accurate and fast. In contrast, neural networks that were used in recent work deliver very accurate predictions but suffer from high latency. In this work, we propose the Tuple Time Tree (T3), a new model that is both accurate and fast. It is orders of magnitude faster than comparable methods and has competitive accuracy to state-of-the-art approaches. Additionally, T3 works for new database instances without re-training because it generalizes across database instances. We achieve T3's speed by relying on a low-latency decision tree model that is compiled to native machine code. We maintain high accuracy with two novel techniques: pipeline-based query plan representation and tuple-centric prediction targets. In our pipeline-based query plan representation, T3 decomposes query plans into pipelines. Then, T3 predicts the execution time of each pipeline individually, instead of the whole query in one step. With tuple-centric prediction targets, T3 predicts the expected time it takes to push a single tuple through a pipeline. It then multiplies this predicted value by the input cardinality of the pipeline to estimate its execution time. As a result, T3 achieves state-of-the-art accuracy with a low-latency decision tree model.}
+      \field{journaltitle}{Proc. ACM Manag. Data}
+      \field{month}{6}
+      \field{number}{3}
+      \field{title}{T3: Accurate and Fast Performance Prediction for Relational Database Systems With Compiled Decision Trees}
+      \field{volume}{3}
+      \field{year}{2025}
+      \verb{doi}
+      \verb 10.1145/3725364
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1145/3725364
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1145/3725364
+      \endverb
+      \keyw{cost model,database systems,query performance prediction}
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+
