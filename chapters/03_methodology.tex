@@ -1,7 +1,7 @@
 % !TeX root = ../main.tex
 % Add the above to each chapter to make compiling the PDF easier in some editors.
 
-\chapter{Methodology and Implementation}\label{chapter:methodology}
+\chapter{Methodology}\label{chapter:methodology}
 
 \section{Problem Statement and Prediction Target}
 
@@ -11,59 +11,65 @@ Upon that, we adapt plan conversion and feature extraction to PostgreSQL-specifi
 
 Also, the prediction target is total query runtime.  
 Following T3, each query plan is decomposed into pipelines and a per-tuple runtime is predicted for each pipeline.
-Then, we aggregate the per-tuple and pipeline runtimes to obtain the final query-runtime estimate.
+Afterwards, we aggregate the per-tuple and then the pipeline runtimes to obtain the final query-runtime estimate.
 
 \section{Data and Preprocessing}
-For data collection, we use the public Zero-Shot benchmark data introduced with the Zero-Shot Cost Model \parencite{zeroshot}.  
-The benchmark is particularly suitable for this thesis because it combines real-world datasets with established benchmark workloads.
-It combines real-world data (e.g., IMDB with JOB queries) with synthetic benchmark data from SSB and TPC-H.
-Overall, the benchmark contains 20 databases with large variation in tables, columns, and foreign-key relationships.
+Regarding the training data, we use the public Zero-Shot benchmark data introduced with the Zero-Shot Cost Model.  
+The benchmark is particularly suitable for this thesis because it consists of real-world datasets (e.g., IMDB) and established benchmark workloads (e.g., SSB, TPC-H and JOB).
+Overall, the benchmark contains 20 databases with large variation in tables, columns, and foreign-key relationships \parencite{zeroshot}.
 
-Having multiple databases allows us to test the generalization capabilities of our model.
+Having this multitude of databases allows us to test the generalization capabilities of our model.
 Similar to the T3 paper, we can train the model on all but one databases and test on the remaining one.
-Moreover as the widely used JOB workload is included, we can compare our performance predictions to other implementations later on.
+Moreover, as the widely used JOB workload is included, we can compare our performance predictions to other implementations later on.
 Further, PostgreSQL is the intended database system of our implementation, which avoids the effort of building a separate PostgreSQL benchmark.
 
 Following the benchmark construction described in the paper, queries are generated per database and executed on a PostgreSQL DBMS (v12) on c8220 nodes on the CloudLab platform.
 Then, they are stored as raw traces (i. e., the output of \texttt{EXPLAIN ANALYZE}).
 Next, the authors preprocess the queries to remove very long-running queries (queries above 30\,s are excluded) to keep the benchmark practical and reproducible \parencite{zeroshot}.
 A further preprocessing step is to parse the raw traces into structured plan representations.
-These parsed plans (15000 per database) contain the operator trees with node-wise attributes (e.g., operator type, estimated/actual cardinalities, widths, and runtimes).  
+These parsed plans (15000 per database) contain the operator nodes found in the raw traces, but organize them in a tree structure with node-wise attributes.
+For every node, e.g., operator type, estimated/actual cardinalities, widths, and runtimes are stored.
+The tree structure can be used to create pipelines and the node information will be used to train the model.
+In the upcoming sections, we will describe these key implementation details.
 
-After preprocessing, we get plans that are similar to the Umbra plan structure, since they also consist of operator trees.
-Hence, the parsed plans offer a good starting point for our pipeline and we can begin without further preprocessing.
+Consequently, the parsed plans offer a good starting point for our pipeline and we can begin without further preprocessing.
 
 
 
-\section{Source Model}
+\section{Implementation}
+
+\subsection{Components Taken from T3}
 
 T3 is our source model and we transfer its core prediction logic from Umbra to PostgreSQL parsed plans.  
 Hence, we adopt its three central design principles:
-A pipeline-based query plan representation, tuple-centric prediction targets, and gradient-boosted decision trees for runtime prediction.
-\parencite{t3}
+a pipeline-based query plan representation, tuple-centric prediction targets, and gradient-boosted decision trees for runtime prediction~\parencite{t3}.
 
+We preserve T3's learning and aggregation mechanics: query runtime is obtained by summing predicted pipeline runtimes, each derived from a per-tuple prediction scaled to the pipeline input cardinality as in the original T3 setup.
 
-In our implementation, we preserve these principles and adapt only representation-specific components.  
-First, PostgreSQL parsed plans are converted into a T3-compatible internal structure in \texttt{src/zeroshot/zeroshot\_to\_t3.py}.  
-This conversion includes operator mapping, pipeline assignment, and extraction of plan-level metadata.  
-Second, model training follows tuple-centric T3 logic in \texttt{src/zeroshot/training\_zeroshot\_tpch\_holdout.py}: per-pipeline and per-tuple training data is generated, targets are transformed as $-\log(t)$, and a LightGBM model is trained with a fixed protocol.
+Training follows the tuple-centric T3 recipe implemented in our codebase (e.g.\ \texttt{src/zeroshot/training\_zeroshot\_tpch\_holdout.py}): we build per-pipeline training rows, transform per-tuple targets with $-\log(t)$, and fit a LightGBM gradient-boosted tree model under a fixed protocol (objective, number of boosting rounds, train/validation split by query).
 
-To realize the transfer, we use two feature-design variants under the same learning setup:
-\begin{enumerate}
-  \item \textbf{Direct transfer baseline:} reuse the existing Umbra-oriented \texttt{FeatureMapper} (\texttt{src/features.py}) on converted plans.
-  \item \textbf{PostgreSQL-native transfer variant:} use \texttt{PgFeatureMapper} (\texttt{src/pg\_features.py}), which computes pipeline-level vectors directly from PostgreSQL plan payload (\texttt{pg}/\texttt{plan\_parameters}) while preserving the same model interface and training flow.
-\end{enumerate}
+PostgreSQL parsed plans are first converted into a T3-compatible internal plan and pipeline layout in \texttt{src/zeroshot/zeroshot\_to\_t3.py} (operator mapping, pipeline breakers, node identifiers, and plan-level metadata).  
+This step supplies the pipeline decomposition and operator graph that the rest of the T3-style pipeline still assumes; feature values themselves are filled by our PostgreSQL-specific extension described below.
 
-The transfer principle is therefore the following: keep T3's learning and prediction mechanics unchanged, and adapt only plan conversion and feature representation where Umbra- and PostgreSQL-specific semantics differ.
+For ablation only, we additionally evaluate a \emph{direct transfer} variant that keeps the original Umbra-oriented \texttt{FeatureMapper} (\texttt{src/features.py}) on the converted plans; we report this comparison in \autoref{subsec:eval_pg_vs_umbra_features}.
 
+\subsection{Extensions for PostgreSQL Parsed Plans}
 
-\section{System A: Direct T3 Transfer Baseline}
+Our main system replaces Umbra-oriented pipeline features with a dedicated PostgreSQL encoding.  
+During conversion, each plan node carries a \texttt{pg} copy of the Zero-Shot \texttt{plan\_parameters} payload.  
+The \texttt{PgFeatureMapper} in \texttt{src/pg\_features.py} then builds one fixed-length feature vector per pipeline from those fields: aggregated cardinalities, planner cost and startup estimates, tuple width, planned worker counts, operator-type counts, simple statistics over scan filters, and an additional operator-level block that sums PG-native signals over operators in pipeline order.  
+The mapper exposes the same interface as T3's feature mapper (\texttt{get\_pipeline\_estimation\_matrix}, \texttt{get\_pipeline\_scan\_sizes}) so the existing per-tuple runtime model and training loop stay unchanged.
 
-\section{System B: T3 Transfer with PostgreSQL-native Features}
+Observed operator timings from the trace are not used as model inputs; they remain available only for defining training labels and pipeline durations where needed.
+
+\section{Other Performance Prediction Implementations}
+
+Add other implementations that you want to compare to.
 
 \section{Training Setup}
 
-\section{Evaluation Metrics}
+Trees nennen
+Add auch hier deine system specs, seed, split etc...
 
 \section{Section}
 Citation test~\parencite{latex}.
