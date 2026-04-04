@@ -36,40 +36,143 @@ Consequently, the parsed plans offer a good starting point for our pipeline and 
 
 
 
-\section{Implementation}
+\section{Implementation}\label{sec:methodology-implementation}
 
-\subsection{Components Taken from T3}
+This section describes how a single parsed plan from the Zero-Shot benchmark is turned into the internal representation used by T3-style pipeline learning, and how we derive fixed-length feature vectors for each pipeline.
+The procedure follows the pipeline idea of T3~\parencite{t3}, but replaces Umbra-specific tuple-size and stage-based featurization with quantities that PostgreSQL exposes in \texttt{EXPLAIN ANALYZE} traces.
 
-T3 is our source model and we transfer its core prediction logic from Umbra to PostgreSQL parsed plans.  
-Hence, we adopt its three central design principles:
-a pipeline-based query plan representation, tuple-centric prediction targets, and gradient-boosted decision trees for runtime prediction~\parencite{t3}.
+\subsection{Mapping parsed PostgreSQL plans to the T3 plan format}
 
-We preserve T3's learning and aggregation mechanics: query runtime is obtained by summing predicted pipeline runtimes, each derived from a per-tuple prediction scaled to the pipeline input cardinality as in the original T3 setup.
+Each training example starts from one element of the \texttt{parsed\_plans} array in the benchmark JSON files.
+Such an object is a rooted tree: every node carries \texttt{plan\_parameters} (operator name, estimated and actual cardinalities, tuple width, planner costs, optional filter predicates, timings, and further fields) and a list \texttt{children} of child subtrees.
 
-Training follows the tuple-centric T3 recipe implemented in our codebase (e.g.\ \texttt{src/zeroshot/training\_zeroshot\_tpch\_holdout.py}): we build per-pipeline training rows, transform per-tuple targets with $-\log(t)$, and fit a LightGBM gradient-boosted tree model under a fixed protocol (objective, number of boosting rounds, train/validation split by query).
+We convert this tree recursively into the same nested operator structure that the original T3 implementation expects for Umbra plans~\parencite{t3}.
+PostgreSQL operator names are mapped to abstract operators (\texttt{tablescan}, \texttt{join} with a physical variant such as hash or index nested-loop, \texttt{sort}, \texttt{groupby}, unary pass-through nodes, and temporary operators for hash build and materialize).
+For joins, child order is normalized so that it matches T3's pipeline rules: for hash and merge joins the inner (build) subtree becomes the \emph{left} child and the outer (probe) subtree the \emph{right} child; nested-loop joins use the mapping required by the existing pipeline logic in the codebase.
+Each node receives stable integer identifiers (\texttt{operatorId} and \texttt{analyzePlanId}) used later for pipeline membership.
 
-PostgreSQL parsed plans are first converted into a T3-compatible internal plan and pipeline layout in \texttt{src/zeroshot/zeroshot\_to\_t3.py} (operator mapping, pipeline breakers, node identifiers, and plan-level metadata).  
-This step supplies the pipeline decomposition and operator graph that the rest of the T3-style pipeline still assumes; feature values themselves are filled by our PostgreSQL-specific extension described below.
+\paragraph{Widths instead of per-column information systems.}
+Umbra plans attach detailed information about produced columns (information units, IUs) and their sizes.
+The parsed PostgreSQL plans do not provide an equivalent per-column breakdown; instead they report a single estimated tuple width per node (\texttt{est\_width}).
+We therefore represent output size by one \texttt{producedIUs} entry per node whose \texttt{estimatedSize} is set from that width (with a small minimum), rather than summing many per-IU sizes as in the Umbra path.
+Conceptually, this replaces fine-grained IU sizes with a single width feature per operator, which is what the benchmark offers.
 
-For ablation only, we additionally evaluate a \emph{direct transfer} variant that keeps the original Umbra-oriented \texttt{FeatureMapper} (\texttt{src/features.py}) on the converted plans; we report this comparison in \autoref{subsec:eval_pg_vs_umbra_features}.
+Scan predicates in the parsed data appear as a nested \texttt{filter\_columns} tree (logical and/or/not and comparison-like leaves).
+Where present, we translate this tree into the restriction format the T3 core understands (\texttt{expression}, \texttt{input}, optional \texttt{direction}), so that the same structural notion of a filter is available for any code path that still inspects restrictions.
 
-\subsection{Extensions for PostgreSQL Parsed Plans}
+To keep PostgreSQL-specific fields available after this normalization, every converted node additionally stores a copy of the original \texttt{plan\_parameters} under a dedicated \texttt{pg} payload.
+Training and inference that use PostgreSQL-native features read only from this payload and from the pipeline layout, so we do not require a full database schema (table names in traces are not needed for that feature path; a minimal placeholder schema suffices for constructing \texttt{QueryPlan} objects in the implementation).
 
-Our main system replaces Umbra-oriented pipeline features with a dedicated PostgreSQL encoding.  
-During conversion, each plan node carries a \texttt{pg} copy of the Zero-Shot \texttt{plan\_parameters} payload.  
-The \texttt{PgFeatureMapper} in \texttt{src/pg\_features.py} then builds one fixed-length feature vector per pipeline from those fields: aggregated cardinalities, planner cost and startup estimates, tuple width, planned worker counts, operator-type counts, simple statistics over scan filters, and an additional operator-level block that sums PG-native signals over operators in pipeline order.  
-The mapper exposes the same interface as T3's feature mapper (\texttt{get\_pipeline\_estimation\_matrix}, \texttt{get\_pipeline\_scan\_sizes}) so the existing per-tuple runtime model and training loop stay unchanged.
+\subsection{Pipeline decomposition}
 
-Observed operator timings from the trace are not used as model inputs; they remain available only for defining training labels and pipeline durations where needed.
+T3 groups operators into \emph{pipelines}: sets of operators that can produce tuples in a pipelined fashion, separated by \emph{pipeline breakers} such as sorting, grouping, or materialization~\parencite{t3}.
+We assign each \texttt{analyzePlanId} to a pipeline id by walking the converted tree with the same high-level rules as in the T3 work: sort and aggregate nodes break pipelines; a materialize node is treated as a breaker; hash and merge joins place the build side in the preceding pipeline and keep the join together with the probe side in the next pipeline.
+
+For every pipeline we record the list of operator ids, and we derive start and stop times from the per-node actual timings in \texttt{plan\_parameters} (converted to a common time unit) so that pipeline durations are available for training targets and bookkeeping.
+The total query runtime label is taken from \texttt{plan\_runtime} when present.
+
+\subsection{PostgreSQL-native feature vectors}
+
+The original T3 feature mapper for Umbra builds a feature vector from \emph{execution phases} within each pipeline (e.g.\ scan, build, probe phases) and from cardinalities and tuple sizes attached to those phases~\parencite{t3}.
+Relative to that design, our PostgreSQL adaptation differs in three main respects:
+\begin{enumerate}
+  \item \textbf{PostgreSQL-native operator features.} Parsed PostgreSQL plans expose one \texttt{EXPLAIN} node per iterator operator; we aggregate features by \emph{PostgreSQL operator name} (fixed layout per operator type) instead of by Umbra execution stage. This matches the iterator-based plan tree and avoids inventing synthetic build/probe phases for every node.
+  \item \textbf{PostgreSQL planner cost estimates.} The pipeline-level block includes sums and extrema of PostgreSQL's \texttt{est\_cost} and \texttt{est\_startup\_cost} from \texttt{plan\_parameters}. These are optimizer-internal estimates of work and startup cost, not observed runtimes; they are absent from the Umbra-oriented feature path in the original T3 code.
+  \item \textbf{Planned parallelism.} We sum \texttt{workers\_planned} over all operators in the pipeline so the model can see how much intra-node parallelism the PostgreSQL planner expected (zero on purely sequential plans).
+\end{enumerate}
+An excerpt of the resulting fixed-length vector (pipeline-level aggregates plus a slice of the per--operator-type block) is given in Figure~\ref{fig:pg-feature-vector-snippet}.
+
+Concretely, we enumerate all operator types that occur in the parsed Zero-Shot plans (scans, bitmap scans, joins, hash and materialize build nodes, sort, aggregate variants, gather nodes, and others) and define a fixed feature layout.
+For each pipeline the vector consists of two concatenated blocks.
+
+In the Umbra implementation of T3, one pipeline row is obtained by summing feature vectors indexed by operator type \emph{and} execution phase (scan, build, probe, \ldots); pipeline scale is reflected inside those per-phase rows~\parencite{t3}.
+PostgreSQL \texttt{EXPLAIN} nodes do not carry Umbra phases, so a single summed grid of that form is unavailable.
+The \textbf{pipeline-level} block therefore collects these quantities as explicit pipeline-wide statistics: summed and extremal planner costs, total planned workers, mean tuple width, and aggregates over scan predicates and filter structure.
+The \textbf{operator-type} block then supplies fixed entries per PostgreSQL operator name (counts, cardinalities, percentages), playing a role comparable to summing type-specific phase contributions in the original design.
+
+\begin{enumerate}
+  \item \textbf{Pipeline-level aggregates.} Over all operators in the pipeline we compute sums and extrema of actual cardinalities (falling back to estimates where actual values are missing), sums of PostgreSQL planner costs (\texttt{est\_cost}) and startup costs (\texttt{est\_startup\_cost}), the sum of planned parallel workers (\texttt{workers\_planned}), the average estimated tuple width, counts of operators by coarse class (scans, joins, sorts, aggregates, temporaries, pass-through), scan-specific sums and indicators (including whether scans have filters), counts of filter constructs (e.g.\ logical and/or, comparisons, \texttt{LIKE}, \texttt{IN}) derived from \texttt{filter\_columns}, the number of operators in the pipeline, and the root operator's output cardinality as a query-global signal.
+  \item \textbf{Operator-type block.} For each PostgreSQL operator type in a fixed ordering, we accumulate a constant (occurrence count) and a small set of numeric descriptors (for example aggregated input and output cardinalities and widths, fractions relative to total scan cardinality in the pipeline, and expression-type fractions for scans), using definitions that match the join semantics of the converted tree (e.g.\ which child counts as probe stream versus build side for hash joins).
+\end{enumerate}
+
+\begin{figure}[htpb]
+  \centering
+  \footnotesize
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{@{}l r@{}}
+    \toprule
+    \multicolumn{2}{@{}l}{\emph{Pipeline-level block (excerpt; first 9 of 24 features)}} \\
+    \midrule
+    \texttt{pg\_act\_card\_sum} & 6541.0 \\
+    \texttt{pg\_act\_card\_max} & 6537.0 \\
+    \texttt{pg\_est\_cost\_sum} & 16882.95 \\
+    \texttt{pg\_est\_cost\_max} & 16877.3 \\
+    \texttt{pg\_est\_startup\_sum} & 125.82 \\
+    \texttt{pg\_workers\_planned\_sum} & 4.0 \\
+    \texttt{pg\_est\_width\_avg} & 10.0 \\
+    \texttt{pg\_num\_scan} & 1.0 \\
+    \texttt{pg\_num\_join} & 1.0 \\
+    \midrule
+    \multicolumn{2}{@{}l}{\emph{Operator-type block (excerpt; \texttt{Nested\_Loop} slice; 130 entries in full)}} \\
+    \midrule
+    \texttt{Nested\_Loop\_const} & 1.0 \\
+    \texttt{Nested\_Loop\_in\_percentage} & 0.11473152822395594 \\
+    \texttt{Nested\_Loop\_right\_card} & 98378.0 \\
+    \texttt{Nested\_Loop\_out\_percentage} & 0.008260670032124828 \\
+    \multicolumn{2}{@{}c@{}}{\scriptsize\textit{(remaining operator-type entries omitted)}} \\
+    \bottomrule
+  \end{tabular}
+  \caption[Excerpt of a PostgreSQL-native pipeline feature vector]{Excerpts of the pipeline-level block (first nine features) and of the \texttt{Nested\_Loop} entries in the operator-type block, for one pipeline from query \texttt{index\_workload\_100k\_s2\_c8220\_890} on the TPC-H holdout test split (15\,000 queries in that run). The full concatenated vector has $24 + 130 = 154$ dimensions; remaining pipeline and operator entries are omitted.}
+  \label{fig:pg-feature-vector-snippet}
+\end{figure}
+
+Figure~\ref{fig:pg-feature-vector-snippet} illustrates how the two blocks are laid out end-to-end: pipeline-level entries summarize the whole pipeline (cardinalities, planner costs, parallelism, filters, \ldots), while the operator block repeats the same layout for every PostgreSQL operator type, filling in only the entries that correspond to operators present in that pipeline.
+
+The layout is fixed so that every pipeline maps to one row of a feature matrix independent of plan size; operators that never appear contribute zeros in their entries.
+
+In summary, we preserve T3's pipeline decomposition and per-pipeline prediction target~\parencite{t3}, while replacing Umbra-oriented tuple and stage features with a width-based size model and with PostgreSQL planner and cardinality signals derived from the parsed plan trees.
+
+\section{Training}
+
+This section describes how we fit the predictor to the Zero-Shot parsed plans.
+We follow the tuple-centric training target proposed in T3~\parencite{t3}, but use the PostgreSQL-native feature matrix and the train--test splits implemented in our zeroshot training scripts.
+
+\subsection{Per-pipeline feature rows and per-tuple targets}
+
+Each training example contributes one row per pipeline: the feature vector is the corresponding row of the pipeline matrix from Section~\ref{sec:methodology-implementation} (one fixed-length vector per pipeline).
+The label for that row is not the full pipeline duration directly, but the \emph{per-tuple pipeline time}, i.e.\ the observed pipeline duration divided by the pipeline's scan cardinality~\parencite{t3}.
+Intuitively, the model learns how much time the pipeline spends per tuple entering from the scan side, which stabilizes learning across queries with very different result sizes.
+
+Concretely, the scan cardinality of a pipeline is the sum of the cardinalities of all scan operators belonging to that pipeline (actual cardinalities from the parsed plan, with estimates as a fallback where needed).
+At inference time, the model predicts a value for each pipeline row; that prediction is mapped back to a pipeline duration by multiplying with the same scan cardinality, and predicted query runtime is the sum of the predicted pipeline times – again as in T3~\parencite{t3}.
+
+Training rows with an all-zero feature vector are dropped, because they carry no usable signal.
+
+\subsection{Model and optimization}
+
+We use gradient boosted decision trees as implemented in LightGBM~\parencite{lightgbm}, in line with the original T3 work~\parencite{t3}.
+The booster is trained with a mean absolute percentage error (MAPE) objective on the training rows.
+As in the reference implementation bundled with this project, each per-tuple target $t$ is clamped to a small positive floor, transformed as $-\log(t)$, and passed to LightGBM; predictions are mapped back with the exponential of the negative raw score before multiplication with scan cardinalities.
+
+Following T3~\parencite{t3}, we cap the number of boosting rounds at \textbf{200} trees.
+The motivation is the same as in the paper: a relatively shallow ensemble limits capacity and helps avoid overfitting to idiosyncrasies of the training workloads while remaining expressive enough for accurate runtime ranking and estimation.
+
+\subsection{Data splits and reproducibility}
+
+\paragraph{Generalization across benchmarks.}
+For the main cross-benchmark evaluation, we use a \emph{leave-one-benchmark-out} split on the parsed-plan JSON files: all files whose path belongs to benchmark directories other than the held-out one form the training pool, and all files from the held-out benchmark form the test set.
+This matches the intent of the Zero-Shot benchmark~\parencite{zeroshot} and of T3's cross-instance evaluation~\parencite{t3}, namely to measure whether the model transfers to an unseen database or workload folder.
+
+\paragraph{Train and validation within the training pool.}
+Inside the training pool, complete queries (entire plans) are partitioned at random into a training fraction of 80\,\% and a validation fraction of 20\,\%.
+The random seed for this split defaults to \textbf{42} in the implementation.
+
+\paragraph{Environment.}
+Model training and evaluation for the results reported in this thesis were run on a personal laptop: Apple MacBook Pro (16-inch, 2021) with Apple M1 Pro (10 CPU cores, 16 GPU cores), 16\,GB unified memory, and 512\,GB SSD, under macOS 15.7.3.
 
 \section{Other Performance Prediction Implementations}
 
 Add other implementations that you want to compare to.
-
-\section{Training Setup}
-
-Trees nennen
-Add auch hier deine system specs, seed, split etc...
 
 \section{Section}
 Citation test~\parencite{latex}.
