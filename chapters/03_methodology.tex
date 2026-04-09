@@ -27,7 +27,7 @@ Following the benchmark construction described in the paper, queries are generat
 Then, they are stored as raw traces (i. e., the output of \texttt{EXPLAIN ANALYZE}).
 Next, the authors preprocess the queries to remove very long-running queries (queries above 30\,s are excluded) to keep the benchmark practical and reproducible \parencite{zeroshot}.
 A further preprocessing step is to parse the raw traces into structured plan representations.
-These parsed plans (15000 per database) contain the operator nodes found in the raw traces, but organize them in a tree structure with node-wise attributes.
+These \texttt{parsed\_plans} (15000 per database) contain the operator nodes found in the raw traces, but organize them in a tree structure with node-wise attributes.
 For every node, e.g., operator type, estimated/actual cardinalities, widths, and runtimes are stored.
 The tree structure can be used to create pipelines and the node information will be used to train the model.
 In the upcoming sections, we will describe these key implementation details.
@@ -38,40 +38,58 @@ Consequently, the parsed plans offer a good starting point for our pipeline and 
 
 \section{Implementation}\label{sec:methodology-implementation}
 
-This section describes how a single parsed plan from the Zero-Shot benchmark is turned into the internal representation used by T3-style pipeline learning, and how we derive fixed-length feature vectors for each pipeline.
-The procedure follows the pipeline idea of T3~\parencite{t3}, but replaces Umbra-specific tuple-size and stage-based featurization with quantities that PostgreSQL exposes in \texttt{EXPLAIN ANALYZE} traces.
+This section describes how a single parsed plan from the Zero-Shot benchmark is turned into a T3-style representation including pipelines.
+Then, we derive fixed-length feature vectors for each pipeline.
+The procedure follows the pipeline idea of T3~\parencite{t3}, but also replaces Umbra-specific tuple-size and stage-based features with properties that PostgreSQL exposes in the \texttt{parsed\_plans}.
+Once all the plans are converted, we can train the model.
 
 \subsection{Mapping parsed PostgreSQL plans to the T3 plan format}
 
 Each training example starts from one element of the \texttt{parsed\_plans} array in the benchmark JSON files.
-Such an object is a rooted tree: every node carries \texttt{plan\_parameters} (operator name, estimated and actual cardinalities, tuple width, planner costs, optional filter predicates, timings, and further fields) and a list \texttt{children} of child subtrees.
+An object in the array is a rooted tree: every node carries \texttt{plan\_parameters} (operator name, estimated and actual cardinalities, 
+tuple width, planner costs, optional filter predicates, timings, and further fields) and a list \texttt{children} of child subtrees.
 
-We convert this tree recursively into the same nested operator structure that the original T3 implementation expects for Umbra plans~\parencite{t3}.
-PostgreSQL operator names are mapped to abstract operators (\texttt{tablescan}, \texttt{join} with a physical variant such as hash or index nested-loop, \texttt{sort}, \texttt{groupby}, unary pass-through nodes, and temporary operators for hash build and materialize).
-For joins, child order is normalized so that it matches T3's pipeline rules: for hash and merge joins the inner (build) subtree becomes the \emph{left} child and the outer (probe) subtree the \emph{right} child; nested-loop joins use the mapping required by the existing pipeline logic in the codebase.
-Each node receives stable integer identifiers (\texttt{operatorId} and \texttt{analyzePlanId}) used later for pipeline membership.
 
-\paragraph{Widths instead of per-column information systems.}
-Umbra plans attach detailed information about produced columns (information units, IUs) and their sizes.
+In \texttt{zeroshot\_to\_t3.py}, we convert this tree recursively into the same nested operator structure
+ that the original T3 implementation expects
+ for Umbra plans~\parencite{t3}.
+PostgreSQL operator names are mapped to abstract operators (\texttt{tablescan}, \texttt{join}, \texttt{sort}, and \texttt{groupby} nodes).
+The PostgreSQL-specific temporary operators  \texttt{hash} and \texttt{materialize} are mapped to the abstract operator \texttt{temp}.
+
+Regarding joins, the child order is normalized so that it matches T3's pipeline rules: i. e., the PG-build subtree becomes the \emph{left} child and the PG-probe subtree the \emph{right} child.
+
+Umbra plans attach detailed information about each produced column (so called \emph{information units, IUs}) and their byte size.
 The parsed PostgreSQL plans do not provide an equivalent per-column breakdown; instead they report a single estimated tuple width per node (\texttt{est\_width}).
-We therefore represent output size by one \texttt{producedIUs} entry per node whose \texttt{estimatedSize} is set from that width (with a small minimum), rather than summing many per-IU sizes as in the Umbra path.
-Conceptually, this replaces fine-grained IU sizes with a single width feature per operator, which is what the benchmark offers.
 
-Scan predicates in the parsed data appear as a nested \texttt{filter\_columns} tree (logical and/or/not and comparison-like leaves).
-Where present, we translate this tree into the restriction format the T3 core understands (\texttt{expression}, \texttt{input}, optional \texttt{direction}), so that the same structural notion of a filter is available for any code path that still inspects restrictions.
+Thus, we represent output size by one \texttt{producedIUs} entry per node, whose size is set from that width. 
+As the relevant data is not provided, we will not rely on fine-grained IU sizes like in the T3/Umbra implementation.
 
-To keep PostgreSQL-specific fields available after this normalization, every converted node additionally stores a copy of the original \texttt{plan\_parameters} under a dedicated \texttt{pg} payload.
-Training and inference that use PostgreSQL-native features read only from this payload and from the pipeline layout, so we do not require a full database schema (table names in traces are not needed for that feature path; a minimal placeholder schema suffices for constructing \texttt{QueryPlan} objects in the implementation).
+Since the feature vector uses the PostgreSQL-native features and operators of the \texttt{parsed\_plans}, we need to keep the original, not converted \texttt{plan\_parameters} available for the feature extraction.
+Hence, the converted abstract operator names are only used to match the internal T3 representation, but not for the feature extraction.
+
+Consequently, every converted node additionally stores a copy of the original \texttt{plan\_parameters} under a dedicated \texttt{pg} payload.
+This payload also includes scan predicates which are stored in the \texttt{filter\_columns} of the \texttt{plan\_parameters}.
+Training and inference that use PostgreSQL-native features read from this payload and from the pipeline layout, which will be described in the next section.
+
+T3 also requires database schema information. However, the Zero-Shot data does not provide this information, so a minimal placeholder schema is used instead.
 
 \subsection{Pipeline decomposition}
 
-T3 groups operators into \emph{pipelines}: sets of operators that can produce tuples in a pipelined fashion, separated by \emph{pipeline breakers} such as sorting, grouping, or materialization~\parencite{t3}.
-We assign each \texttt{analyzePlanId} to a pipeline id by walking the converted tree with the same high-level rules as in the T3 work: sort and aggregate nodes break pipelines; a materialize node is treated as a breaker; hash and merge joins place the build side in the preceding pipeline and keep the join together with the probe side in the next pipeline.
+Umbra plans group operators into \emph{pipelines}: sets of operators that can produce tuples in a pipelined fashion, separated by \emph{pipeline breakers}. 
+Namely these are operators/stages, where data is materialized. For instance, sorting, grouping, or materialization, but also the build side of a hash join~\parencite{t3}.
 
-For every pipeline we record the list of operator ids, and we derive start and stop times from the per-node actual timings in \texttt{plan\_parameters} (converted to a common time unit) so that pipeline durations are available for training targets and bookkeeping.
-The total query runtime label is taken from \texttt{plan\_runtime} when present.
+Since PostgreSQL plans do not provide such a pipeline breakdown, we need to derive it from the converted tree.
+We assign each node to a pipeline by walking the converted tree with the same high-level rules as in the T3 work.
+Thus, sort and aggregate nodes break pipelines; a materialize node is treated as a breaker.
+Joins place the build side in the preceding pipeline and keep the join together with the probe side in the next pipeline.
+The pipeline assignment is stored in the \texttt{analyzePlanPipelines} list of the converted plan.
+
+For every pipeline we record the list of operator ids, and we derive start and stop times.
+They stem from the per-node actual timings in \texttt{plan\_parameters} and are accumulated, so that pipeline durations are available for further processing during training.
 
 \subsection{PostgreSQL-native feature vectors}
+
+IWAS noch mit MATRIX schreiben.
 
 The original T3 feature mapper for Umbra builds a feature vector from \emph{execution phases} within each pipeline (e.g.\ scan, build, probe phases) and from cardinalities and tuple sizes attached to those phases~\parencite{t3}.
 Relative to that design, our PostgreSQL adaptation differs in three main respects:
