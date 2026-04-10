@@ -28,17 +28,95 @@ Then, they are stored as raw traces (i. e., the output of \texttt{EXPLAIN ANALYZ
 Next, the authors preprocess the queries to remove very long-running queries (queries above 30\,s are excluded) to keep the benchmark practical and reproducible \parencite{zeroshot}.
 A further preprocessing step is to parse the raw traces into structured plan representations.
 These \texttt{parsed\_plans} (15000 per database) contain the operator nodes found in the raw traces, but organize them in a tree structure with node-wise attributes.
-For every node, e.g., operator type, estimated/actual cardinalities, widths, and runtimes are stored.
+For every node, e.g., operator type, estimated/actual cardinalities, widths, and runtimes are stored in the \texttt{plan\_parameters} field.
+
+Figure~\ref{fig:parsed-plan-hash-join-cutout} shows such a structured plan representation for a \texttt{Hash Join} and its children.
+On top of the already mentioned information, also filter predicates can be retrieved from the \texttt{filter\_columns} field.
+Furthermore, PostgreSQL-specific fields like \texttt{workers\_planned} (planned parallel workers for the node) are available.
+
+
 The tree structure can be used to create pipelines and the node information will be used to train the model.
 In the upcoming sections, we will describe these key implementation details.
 
 Consequently, the parsed plans offer a good starting point for our pipeline and we can begin without further preprocessing.
 
+\begin{figure}[htpb]
+  \centering
+  \resizebox{\linewidth}{!}{%
+  \begin{tikzpicture}[
+    planop/.style={draw, rounded corners, fill=gray!10, align=left, inner sep=6pt, text width=0.46\linewidth, font=\small}
+  ]
+    \node[planop] (join) at (0,0) {%
+      \texttt{op\_name: Hash Join}\\
+      \texttt{est\_startup\_cost: 120636.97}\\
+      \texttt{est\_cost: 319835.72}\\
+      \texttt{est\_card: 14988952.0}\\
+      \texttt{est\_width: 0.0}\\
+      \texttt{act\_startup\_cost: 609.469}\\
+      \texttt{act\_time: 1473.528}\\
+      \texttt{act\_card: 6611280.0}\\
+      \texttt{filter\_columns: \{column: 56, operator: =,}\\
+      \texttt{\ \ literal: corporation.region\_no,\ literal\_feature: 0\}}\\
+      \texttt{act\_children\_card: 254280000.0}\\
+      \texttt{est\_children\_card: 1176670000.0}\\
+      \texttt{workers\_planned: 2}
+    };
+    \node[planop] (left) at (-6.3,-8.2) {%
+      \texttt{op\_name: Merge Join}\\
+      \texttt{est\_startup\_cost: 120548.72}\\
+      \texttt{est\_cost: 126900.67}\\
+      \texttt{est\_card: 470668.0}\\
+      \texttt{est\_width: 12.0}\\
+      \texttt{act\_startup\_cost: 608.149}\\
+      \texttt{act\_time: 638.269}\\
+      \texttt{act\_card: 101712.0}\\
+      \texttt{act\_children\_card: 795865104.0}\\
+      \texttt{est\_children\_card: 18939960.0}\\
+      \texttt{workers\_planned: 2}
+    };
+    \node[planop] (hash) at (6.3,-8.2) {%
+      \texttt{op\_name: Hash}\\
+      \texttt{est\_startup\_cost: 57.0}\\
+      \texttt{est\_cost: 57.0}\\
+      \texttt{est\_card: 2500.0}\\
+      \texttt{est\_width: 4.0}\\
+      \texttt{act\_startup\_cost: 1.208}\\
+      \texttt{act\_time: 1.209}\\
+      \texttt{act\_card: 2500.0}\\
+      \texttt{act\_children\_card: 2500.0}\\
+      \texttt{est\_children\_card: 2500.0}\\
+      \texttt{workers\_planned: 2}
+    };
+    \node[planop] (scan) at (6.3,-15.0) {%
+      \texttt{table: 2}\\
+      \texttt{op\_name: Seq Scan}\\
+      \texttt{est\_startup\_cost: 0.0}\\
+      \texttt{est\_cost: 57.0}\\
+      \texttt{est\_card: 2500.0}\\
+      \texttt{est\_width: 4.0}\\
+      \texttt{act\_startup\_cost: 0.026}\\
+      \texttt{act\_time: 0.765}\\
+      \texttt{act\_card: 2500.0}\\
+      \texttt{filter\_columns: \{\}}\\
+      \texttt{act\_children\_card: 1}\\
+      \texttt{est\_children\_card: 1}\\
+      \texttt{workers\_planned: 2}
+    };
+
+    \draw[-latex, thick] (left) -- (join);
+    \draw[-latex, thick] (hash) -- (join);
+    \draw[-latex, thick] (scan) -- (hash);
+  \end{tikzpicture}
+  }
+  \caption[Top-node cutout with Hash Join]{Top-node tree cutout of one parsed plan with \texttt{Hash Join}. Child relationships are shown by arrows,
+   and each node box contains selected \texttt{plan\_parameters} of that node for the displayed cutout. Source: \path{/zero-shot-data/runs/parsed_plans/credit/workload_100k_s1_c8220.json}, parsed-plan entry 0.}
+  \label{fig:parsed-plan-hash-join-cutout}
+\end{figure}
+
 
 
 \section{Implementation}\label{sec:methodology-implementation}
 
-ZEROSHOT DATA EXAMPLE VIELLEICHT.
 
 This section describes how a single parsed plan from the Zero-Shot benchmark is turned into a T3-style representation including pipelines.
 Then, we derive fixed-length feature vectors for each pipeline.
@@ -60,18 +138,12 @@ The PostgreSQL-specific temporary operators  \texttt{hash} and \texttt{materiali
 
 Regarding joins, the child order is normalized so that it matches T3's pipeline rules: i. e., the PG-build subtree becomes the \emph{left} child and the PG-probe subtree the \emph{right} child.
 
-Umbra plans attach detailed information about each produced column (so called \emph{information units, IUs}) and their byte size.
-The parsed PostgreSQL plans do not provide an equivalent per-column breakdown; instead they report a single estimated tuple width per node (\texttt{est\_width}).
-
-Thus, we represent output size by one \texttt{producedIUs} entry per node, whose size is set from that width. 
-As the relevant data is not provided, we will not rely on fine-grained IU sizes like in the T3/Umbra implementation.
-
 Since the feature vector uses the PostgreSQL-native features and operators of the \texttt{parsed\_plans}, we need to keep the original, not converted \texttt{plan\_parameters} available for the feature extraction.
-Hence, the converted abstract operator names are only used to match the internal T3 representation, but not for the feature extraction.
+Hence, the converted abstract operator names are only used to match the internal T3 representation for pipeline assignment, but not for the feature extraction.
 
 Consequently, every converted node additionally stores a copy of the original \texttt{plan\_parameters} under a dedicated \texttt{pg} payload.
 This payload also includes scan predicates which are stored in the \texttt{filter\_columns} of the \texttt{plan\_parameters}.
-Training and inference that use PostgreSQL-native features read from this payload and from the pipeline layout, which will be described in the next section.
+Training and inference that use PostgreSQL-native features read from this payload and from the pipeline layout, which will be described in the next sections.
 
 T3 also requires database schema information. However, the Zero-Shot data does not provide this information, so a minimal placeholder schema is used instead.
 
@@ -91,29 +163,67 @@ They stem from the per-node actual timings in \texttt{plan\_parameters} and are 
 
 \subsection{PostgreSQL-native feature vectors}
 
-IWAS noch mit MATRIX schreiben.
-
 The original T3 feature mapper for Umbra builds a feature vector from \emph{execution phases} within each pipeline (e.g.\ scan, build, probe phases) and from cardinalities and tuple sizes attached to those phases~\parencite{t3}.
-Relative to that design, our PostgreSQL adaptation differs in three main respects:
-\begin{enumerate}
-  \item \textbf{PostgreSQL-native operator features.} Parsed PostgreSQL plans expose one \texttt{EXPLAIN} node per iterator operator; we aggregate features by \emph{PostgreSQL operator name} (fixed layout per operator type) instead of by Umbra execution stage. This matches the iterator-based plan tree and avoids inventing synthetic build/probe phases for every node.
-  \item \textbf{PostgreSQL planner cost estimates.} The pipeline-level block includes sums and extrema of PostgreSQL's \texttt{est\_cost} and \texttt{est\_startup\_cost} from \texttt{plan\_parameters}. These are optimizer-internal estimates of work and startup cost, not observed runtimes; they are absent from the Umbra-oriented feature path in the original T3 code.
-  \item \textbf{Planned parallelism.} We sum \texttt{workers\_planned} over all operators in the pipeline so the model can see how much intra-node parallelism the PostgreSQL planner expected (zero on purely sequential plans).
-\end{enumerate}
-An excerpt of the resulting fixed-length vector (pipeline-level aggregates plus a slice of the per--operator-type block) is given in Figure~\ref{fig:pg-feature-vector-snippet}.
+As PostgreSQL plans contain different data, we use \texttt{pg\_features.py} to construct the feature vector for each pipeline after the aforementioned pipeline decomposition.
+It becomes clear, why the \texttt{plan\_parameters} are kept in the converted tree (\texttt{pg} payload entry) as we use them for the feature extraction which will be explained now.
 
-Concretely, we enumerate all operator types that occur in the parsed Zero-Shot plans (scans, bitmap scans, joins, hash and materialize build nodes, sort, aggregate variants, gather nodes, and others) and define a fixed feature layout.
-For each pipeline the vector consists of two concatenated blocks.
+Once the feature vector is constructed, we can train the model.
+Our feature vector differs from the original T3 feature vector in the following ways:
 
-In the Umbra implementation of T3, one pipeline row is obtained by summing feature vectors indexed by operator type \emph{and} execution phase (scan, build, probe, \ldots); pipeline scale is reflected inside those per-phase rows~\parencite{t3}.
-PostgreSQL \texttt{EXPLAIN} nodes do not carry Umbra phases, so a single summed grid of that form is unavailable.
-The \textbf{pipeline-level} block therefore collects these quantities as explicit pipeline-wide statistics: summed and extremal planner costs, total planned workers, mean tuple width, and aggregates over scan predicates and filter structure.
-The \textbf{operator-type} block then supplies fixed entries per PostgreSQL operator name (counts, cardinalities, percentages), playing a role comparable to summing type-specific phase contributions in the original design.
+
 
 \begin{enumerate}
-  \item \textbf{Pipeline-level aggregates.} Over all operators in the pipeline we compute sums and extrema of actual cardinalities (falling back to estimates where actual values are missing), sums of PostgreSQL planner costs (\texttt{est\_cost}) and startup costs (\texttt{est\_startup\_cost}), the sum of planned parallel workers (\texttt{workers\_planned}), the average estimated tuple width, counts of operators by coarse class (scans, joins, sorts, aggregates, temporaries, pass-through), scan-specific sums and indicators (including whether scans have filters), counts of filter constructs (e.g.\ logical and/or, comparisons, \texttt{LIKE}, \texttt{IN}) derived from \texttt{filter\_columns}, the number of operators in the pipeline, and the root operator's output cardinality as a query-global signal.
-  \item \textbf{Operator-type block.} For each PostgreSQL operator type in a fixed ordering, we accumulate a constant (occurrence count) and a small set of numeric descriptors (for example aggregated input and output cardinalities and widths, fractions relative to total scan cardinality in the pipeline, and expression-type fractions for scans), using definitions that match the join semantics of the converted tree (e.g.\ which child counts as probe stream versus build side for hash joins).
+  \item \textbf{PostgreSQL-native operator features.} Parsed PostgreSQL plans expose one \texttt{EXPLAIN} node per iterator operator. As no execution stages are available, we aggregate features per operator (fixed layout per operator type). 
+  Hence, we do not include the stage-based features of the original T3 feature mapper. This matches the iterator-based PostgreSQL approach and avoids inventing synthetic build/probe phases for every node.
+  \item \textbf{PostgreSQL planner cost estimates.} We include sums and extrema of PostgreSQL's \texttt{est\_cost} and \texttt{est\_startup\_cost} from \texttt{plan\_parameters} in the feature vector.
+  These are optimizer-internal estimates of work and startup cost and are an additional PostgreSQL-specific signal that is not available in the Umbra feature vector.
+  Consequently, we can include this information in the feature vector (and model training).
+  \item \textbf{Planned parallelism.} Another PostgreSQL-specific signal is the planned parallelism. So, we take the sum of \texttt{workers\_planned} over all operators in the pipeline. Hereby, the model can see how much intra-node parallelism the PostgreSQL planner expected (zero on purely sequential plans).
+  \item \textbf{Tuple size.} T3 uses tuple sizes in its feature vector. This information is provided by the Umbra plans.
+  However, the parsed PostgreSQL do not contain a perfect equivalent. 
+  Instead, they report a single width estimate per node (\texttt{est\_width}).
+  Thus, an average of \texttt{est\_width} over all operators in the pipeline is used to represent sizes in the feature vector, replacing the tuple size features of T3.
 \end{enumerate}
+
+In the Umbra feature vector of T3, rows are indexed by both operator type \emph{and} execution phase (scan, build, probe, \ldots) like \texttt{HashJoin\_Probe\ldots}~\parencite{t3}.
+Now with the PostgreSQL implementation, we miss out on the execution phase dimension.
+Whereas not an equivalent substitute, we replace this information with a pipeline-level dimension and keep the operator-level features for the individual operators.
+
+Consequently, each pipeline's feature vector consists of two concatenated blocks, as Figure~\ref{fig:pg-feature-vector-snippet} shows:
+
+\begin{enumerate}
+  \item \textbf{Pipeline-level aggregates.}
+  Over all operators in a pipeline, we summarize feature categories with sum, max, and average statistics.
+  Cardinality and cost features cover the \texttt{pg\_act\_card\_...}, \texttt{pg\_est\_cost\_...},
+  and \texttt{pg\_est\_startup\_...} families, complemented by
+  \texttt{pg\_workers\_planned\_sum} and \texttt{pg\_est\_width\_avg}.
+  
+  Operator-composition features count coarse classes via the \texttt{pg\_num\_...} family
+  (scan, join, sort, aggregate, temporary, select).
+  Predicate-structure features encode scan filtering via \texttt{pg\_scan\_has\_filter}
+  and \texttt{pg\_filter\_...} counters (and/or/compare/like/in variants).
+  Finally, pipeline-context features describe structure using
+  \texttt{pg\_pipeline\_num\_ops} for instance.
+  \item \textbf{Operator-level block.} 
+  For every operator that occurs in \texttt{parsed\_plans}, we assign a slice in the feature vector.
+  If multiple operators of the same type occur in the pipeline, we sum the features over all occurences.
+  In figure~\ref{fig:pg-feature-vector-snippet}, the excerpt of the operator-type block for the \texttt{Nested\_Loop join} operator is depicted.
+  
+  Depending on the operator type, we include different features. This feature set is derived from T3's Umbra implementation.
+  For example, a join would include different features than a scan, like in the Umbra/T3 implementation.
+  The exception is the operator count ("\texttt{const}"), which exists for every operator type in both our and the Umbra/T3 implementation.
+\end{enumerate}
+
+In total, the feature vector has 154 dimensions (24 pipeline-level features + 130 operator-type features).
+Empty features are kept as zeroes to fix the feature vector dimension.
+
+Regarding the cardinalities, either the actual or the estimated cardinalities are used in the feature vector, depending on which one is selected in training.
+However, even if estimates are used, the row names are still called "actual" cardinalities.
+This caveat is a design decision to keep the row names completely uniform.
+
+Once the feature vectors for all pipelines are constructed, we get the feature matrix for the whole plan.
+With this matrix, we proceed to train the model in the next section.
+
 
 \begin{figure}[htpb]
   \centering
@@ -121,7 +231,7 @@ The \textbf{operator-type} block then supplies fixed entries per PostgreSQL oper
   \setlength{\tabcolsep}{5pt}
   \begin{tabular}{@{}l r@{}}
     \toprule
-    \multicolumn{2}{@{}l}{\emph{Pipeline-level block (excerpt; first 9 of 24 features)}} \\
+    \multicolumn{2}{@{}l}{\emph{Pipeline-level block (excerpt; first 12 of 24 features)}} \\
     \midrule
     \texttt{pg\_act\_card\_sum} & 6541.0 \\
     \texttt{pg\_act\_card\_max} & 6537.0 \\
@@ -132,8 +242,11 @@ The \textbf{operator-type} block then supplies fixed entries per PostgreSQL oper
     \texttt{pg\_est\_width\_avg} & 10.0 \\
     \texttt{pg\_num\_scan} & 1.0 \\
     \texttt{pg\_num\_join} & 1.0 \\
+    \texttt{pg\_scan\_has\_filter} & 0.0 \\
+    \texttt{pg\_filter\_compare\_count} & 0.0 \\
+    \texttt{pg\_pipeline\_num\_ops} & 2.0 \\
     \midrule
-    \multicolumn{2}{@{}l}{\emph{Operator-type block (excerpt; \texttt{Nested\_Loop} slice; 130 entries in full)}} \\
+    \multicolumn{2}{@{}l}{\emph{Operator-type block (excerpt; Nested\_Loop slice; 130 entries in full)}} \\
     \midrule
     \texttt{Nested\_Loop\_const} & 1.0 \\
     \texttt{Nested\_Loop\_in\_percentage} & 0.11473152822395594 \\
@@ -142,15 +255,13 @@ The \textbf{operator-type} block then supplies fixed entries per PostgreSQL oper
     \multicolumn{2}{@{}c@{}}{\scriptsize\textit{(remaining operator-type entries omitted)}} \\
     \bottomrule
   \end{tabular}
-  \caption[Excerpt of a PostgreSQL-native pipeline feature vector]{Excerpts of the pipeline-level block (first nine features) and of the \texttt{Nested\_Loop} entries in the operator-type block, for one pipeline from query \texttt{index\_workload\_100k\_s2\_c8220\_890} on the TPC-H holdout test split (15\,000 queries in that run). The full concatenated vector has $24 + 130 = 154$ dimensions; remaining pipeline and operator entries are omitted.}
+  \caption[Excerpt of a PostgreSQL-native pipeline feature vector]
+  {Excerpts of the pipeline-level block (first twelve features) and of the \texttt{Nested\_Loop} entries in the operator-type block, 
+  for one pipeline from query \texttt{index\_workload\_100k\_s2\_c8220\_890} on the TPC-H database. 
+  The full concatenated vector has 154 dimensions; remaining pipeline and operator entries are omitted.}
   \label{fig:pg-feature-vector-snippet}
 \end{figure}
 
-Figure~\ref{fig:pg-feature-vector-snippet} illustrates how the two blocks are laid out end-to-end: pipeline-level entries summarize the whole pipeline (cardinalities, planner costs, parallelism, filters, \ldots), while the operator block repeats the same layout for every PostgreSQL operator type, filling in only the entries that correspond to operators present in that pipeline.
-
-The layout is fixed so that every pipeline maps to one row of a feature matrix independent of plan size; operators that never appear contribute zeros in their entries.
-
-In summary, we preserve T3's pipeline decomposition and per-pipeline prediction target~\parencite{t3}, while replacing Umbra-oriented tuple and stage features with a width-based size model and with PostgreSQL planner and cardinality signals derived from the parsed plan trees.
 
 \section{Training}
 
