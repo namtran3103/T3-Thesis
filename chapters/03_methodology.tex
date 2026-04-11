@@ -189,7 +189,7 @@ In the Umbra feature vector of T3, rows are indexed by both operator type \emph{
 Now with the PostgreSQL implementation, we miss out on the execution phase dimension.
 
 Whereas not an equivalent substitute, we replace this information with a pipeline-level dimension and keep the operator-level features for the individual operators.
-The pipeline-level block strives to produce metadata that superceeds the operator level, e. g., by using averages and sums over operators.
+The pipeline-level block strives to produce metadata in a compact manner that superceeds the operator level, e. g., by using averages and sums over operators.
 
 Consequently, each pipeline's feature vector consists of two concatenated blocks, as Figure~\ref{fig:pg-feature-vector-snippet} shows:
 
