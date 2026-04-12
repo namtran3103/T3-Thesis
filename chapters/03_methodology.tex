@@ -9,8 +9,8 @@ In this thesis, we address the transfer of the T3 runtime prediction approach fr
 The central methodological goal is to preserve T3’s core modeling principles.
 Upon that, we adapt plan conversion and feature extraction to PostgreSQL-specific plan information.
 
-Also, the prediction target is total query runtime.  
-Following T3, each query plan is decomposed into pipelines and the model predicts a duration for each pipeline.
+The final prediction target is total query runtime.  
+Each query plan is decomposed into pipelines and the model predicts a duration for each pipeline.
 The predicted query runtime is the sum of these per-pipeline predictions.
 
 \section{Data and Preprocessing}
@@ -31,7 +31,7 @@ These \texttt{parsed\_plans} (15000 per database) contain the operator nodes fou
 For every node, e.g., operator type, estimated/actual cardinalities, widths, and runtimes are stored in the \texttt{plan\_parameters} field.
 
 Figure~\ref{fig:parsed-plan-hash-join-cutout} shows such a structured plan representation for a \texttt{Hash Join} and its children.
-On top of the already mentioned information, also filter predicates can be retrieved from the \texttt{filter\_columns} field.
+Here, also filter predicates can be retrieved from the \texttt{filter\_columns} field.
 Furthermore, PostgreSQL-specific fields like \texttt{workers\_planned} (planned parallel workers for the node) are available.
 
 
@@ -108,8 +108,8 @@ Consequently, the parsed plans offer a good starting point for our pipeline and 
     \draw[-latex, thick] (scan) -- (hash);
   \end{tikzpicture}
   }
-  \caption[Top-node cutout with Hash Join]{Top-node tree cutout of one \texttt{parsed\_plan} with \texttt{Hash Join}. Child relationships are shown by arrows,
-   and each node box contains selected \texttt{plan\_parameters} of that node for the displayed cutout. Source: \path{credit/workload_100k_s1_c8220.json}, entry \texttt{0}.}
+  \caption[Top-node cutout with Hash Join]{Top-node tree cutout of one \texttt{parsed\_plan} with a \texttt{Hash Join} from \path{credit/workload_100k_s1_c8220}. Child relationships are shown by arrows,
+   and each node box contains selected \texttt{plan\_parameters} of that node for the displayed cutout.}
   \label{fig:parsed-plan-hash-join-cutout}
 \end{figure}
 
@@ -120,12 +120,13 @@ Consequently, the parsed plans offer a good starting point for our pipeline and 
 
 This section describes how a single parsed plan from the Zero-Shot benchmark is turned into a T3-style representation including pipelines.
 Then, we derive fixed-length feature vectors for each pipeline.
-The procedure follows the pipeline idea of T3~\parencite{t3}, but also replaces Umbra-specific tuple-size and stage-based features with properties that PostgreSQL exposes in the \texttt{parsed\_plans}.
-Once all the plans are converted, we can train the model.
+
+The procedure follows the pipeline prediction idea of T3~\parencite{t3}, but also replaces Umbra-specific features with properties that PostgreSQL exposes in the \texttt{parsed\_plans}.
+Once all the plans are converted and the feature vectors are created, we can train the model.
 
 \subsection{Mapping Parsed PostgreSQL Plans to the T3 Plan Format}
 
-Each training example starts from one element of the \texttt{parsed\_plans} array in the benchmark JSON files.
+We start from one element, i. e., one plan, of the \texttt{parsed\_plans} array in the benchmark JSON files.
 An object in the array is a rooted tree: every node carries \texttt{plan\_parameters} (operator name, estimated and actual cardinalities, 
 tuple width, planner costs, optional filter predicates, timings, and further fields) and a list \texttt{children} of child subtrees.
 
@@ -142,8 +143,7 @@ Since the feature vector uses the PostgreSQL-native features and operators of th
 Hence, the converted abstract operator names are only used to match the internal T3 representation for pipeline assignment, but not for the feature extraction.
 
 Consequently, every converted node additionally stores a copy of the original \texttt{plan\_parameters} under a dedicated \texttt{pg} payload.
-This payload also includes scan predicates which are stored in the \texttt{filter\_columns} of the \texttt{plan\_parameters}.
-Training and inference that use PostgreSQL-native features read from this payload and from the pipeline layout, which will be described in the next sections.
+Training and inference, that use PostgreSQL-native features, read from this payload and from the pipeline layout, which will be described in the next sections.
 
 T3 also requires database schema information. However, the Zero-Shot data does not provide this information, so a minimal placeholder schema is used instead.
 
@@ -311,9 +311,9 @@ All other instances form the training data.
 Concretely, \texttt{training\_zeroshot\_tpch\_holdout.py} uses the \texttt{-\--holdout} argument to specify the holdout instance (default: \texttt{tpc\_h}).
 Then, we perform a training for all test instances with \texttt{run\_all\_holdouts.py}.
 
-\paragraph{Train and Validation within the Training Data.}
-Inside the training data, complete queries (entire plans) are partitioned at random into a training fraction of 80\,\% and a validation fraction of 20\,\%.
-The default seed is 42.
+\paragraph{Train and Validation Splits.}
+Mirroring T3's train/validation split, we sample 80\% of the training data for training and 20\% for validation~\parencite{t3}.
+The default seed used for shuffling the training data is 42.
 
 \paragraph{Environment.}
 Model training and evaluation for the results reported in this thesis were run on a personal laptop: an Apple MacBook Pro (16-inch, 2021) with the Apple M1 Pro processor (10 CPU cores, 16 GPU cores), 16\,GB memory, and a 512\,GB SSD, under macOS 15.7.3.
