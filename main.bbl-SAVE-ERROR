@@ -19,6 +19,56 @@
 
 \refsection{0}
   \datalist[entry]{anyt/global//global/global/global}
+    \entry{postgresql_docs_query_path}{manual}{}{}
+      \list{organization}{1}{%
+        {The {PostgreSQL} Global Development Group}%
+      }
+      \field{labelalpha}{24}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labeltitlesource}{title}
+      \field{title}{{PostgreSQL} 16 Documentation: The Path of a Query}
+      \field{year}{2024}
+      \verb{urlraw}
+      \verb https://www.postgresql.org/docs/16/query-path.html
+      \endverb
+      \verb{url}
+      \verb https://www.postgresql.org/docs/16/query-path.html
+      \endverb
+    \endentry
+    \entry{graefe1994}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=5635912fadd35b7cccc50d61503c072e}{%
+           family={Graefe},
+           familyi={G\bibinitperiod},
+           given={Goetz},
+           giveni={G\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{5635912fadd35b7cccc50d61503c072e}
+      \strng{fullhash}{5635912fadd35b7cccc50d61503c072e}
+      \strng{fullhashraw}{5635912fadd35b7cccc50d61503c072e}
+      \strng{bibnamehash}{5635912fadd35b7cccc50d61503c072e}
+      \strng{authorbibnamehash}{5635912fadd35b7cccc50d61503c072e}
+      \strng{authornamehash}{5635912fadd35b7cccc50d61503c072e}
+      \strng{authorfullhash}{5635912fadd35b7cccc50d61503c072e}
+      \strng{authorfullhashraw}{5635912fadd35b7cccc50d61503c072e}
+      \field{labelalpha}{Gra94}
+      \field{sortinit}{G}
+      \field{sortinithash}{32d67eca0634bf53703493fb1090a2e8}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{IEEE Transactions on Knowledge and Data Engineering}
+      \field{number}{1}
+      \field{title}{Volcano---{A}n Extensible and Parallel Query Evaluation System}
+      \field{volume}{6}
+      \field{year}{1994}
+      \field{pages}{120\bibrangedash 135}
+      \range{pages}{16}
+      \verb{doi}
+      \verb 10.1109/69.273032
+      \endverb
+    \endentry
     \entry{zeroshot}{article}{}{}
       \name{author}{2}{}{%
         {{un=0,uniquepart=base,hash=0b09178887db687241f0eee1aa23f8ea}{%
@@ -173,6 +223,77 @@
       \field{title}{LaTeX : A Documentation Preparation System User's Guide and Reference Manual}
       \field{year}{1994}
     \endentry
+    \entry{neumann2011}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=856106a72d787bcea4281fca718cd7d7}{%
+           family={Neumann},
+           familyi={N\bibinitperiod},
+           given={Thomas},
+           giveni={T\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{856106a72d787bcea4281fca718cd7d7}
+      \strng{fullhash}{856106a72d787bcea4281fca718cd7d7}
+      \strng{fullhashraw}{856106a72d787bcea4281fca718cd7d7}
+      \strng{bibnamehash}{856106a72d787bcea4281fca718cd7d7}
+      \strng{authorbibnamehash}{856106a72d787bcea4281fca718cd7d7}
+      \strng{authornamehash}{856106a72d787bcea4281fca718cd7d7}
+      \strng{authorfullhash}{856106a72d787bcea4281fca718cd7d7}
+      \strng{authorfullhashraw}{856106a72d787bcea4281fca718cd7d7}
+      \field{labelalpha}{Neu11}
+      \field{sortinit}{N}
+      \field{sortinithash}{22369a73d5f88983a108b63f07f37084}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Proceedings of the VLDB Endowment}
+      \field{number}{9}
+      \field{title}{Efficiently Compiling Efficient Query Plans for Modern Hardware}
+      \field{volume}{4}
+      \field{year}{2011}
+      \field{pages}{539\bibrangedash 550}
+      \range{pages}{12}
+      \verb{doi}
+      \verb 10.14778/2002938.2002940
+      \endverb
+    \endentry
+    \entry{umbra2020}{inproceedings}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=856106a72d787bcea4281fca718cd7d7}{%
+           family={Neumann},
+           familyi={N\bibinitperiod},
+           given={Thomas},
+           giveni={T\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=4079a92ce5df93f11686ed6b88399e39}{%
+           family={Freitag},
+           familyi={F\bibinitperiod},
+           given={Michael\bibnamedelima J.},
+           giveni={M\bibinitperiod\bibinitdelim J\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{d0acf0d05371e858d4bd834331ab77cd}
+      \strng{fullhash}{d0acf0d05371e858d4bd834331ab77cd}
+      \strng{fullhashraw}{d0acf0d05371e858d4bd834331ab77cd}
+      \strng{bibnamehash}{d0acf0d05371e858d4bd834331ab77cd}
+      \strng{authorbibnamehash}{d0acf0d05371e858d4bd834331ab77cd}
+      \strng{authornamehash}{d0acf0d05371e858d4bd834331ab77cd}
+      \strng{authorfullhash}{d0acf0d05371e858d4bd834331ab77cd}
+      \strng{authorfullhashraw}{d0acf0d05371e858d4bd834331ab77cd}
+      \field{labelalpha}{NF20}
+      \field{sortinit}{N}
+      \field{sortinithash}{22369a73d5f88983a108b63f07f37084}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{CIDR}
+      \field{title}{Umbra: A Disk-Based System with In-Memory Performance}
+      \field{year}{2020}
+      \verb{urlraw}
+      \verb https://www.cidrdb.org
+      \endverb
+      \verb{url}
+      \verb https://www.cidrdb.org
+      \endverb
+    \endentry
     \entry{t3}{article}{}{}
       \name{author}{2}{}{%
         {{un=0,uniquepart=base,hash=99d1d9315de4f123b5312abb5ccf91f1}{%
@@ -224,6 +345,47 @@
       \verb https://doi.org/10.1145/3725364
       \endverb
       \keyw{cost model,database systems,query performance prediction}
+    \endentry
+    \entry{silberschatz2019}{book}{}{}
+      \name{author}{3}{}{%
+        {{un=0,uniquepart=base,hash=525ecdcf12996b3d68e3c71d7526bf35}{%
+           family={Silberschatz},
+           familyi={S\bibinitperiod},
+           given={Abraham},
+           giveni={A\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=1640aebebaf3b1913d7477fe0f7675e0}{%
+           family={Korth},
+           familyi={K\bibinitperiod},
+           given={Henry\bibnamedelima F.},
+           giveni={H\bibinitperiod\bibinitdelim F\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=61d6a2d7215571ff54eadda8d36a2d58}{%
+           family={Sudarshan},
+           familyi={S\bibinitperiod},
+           given={S.},
+           giveni={S\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {McGraw-Hill Education}%
+      }
+      \strng{namehash}{4c269a32abf2e4056c1b534993062a6b}
+      \strng{fullhash}{4c269a32abf2e4056c1b534993062a6b}
+      \strng{fullhashraw}{4c269a32abf2e4056c1b534993062a6b}
+      \strng{bibnamehash}{4c269a32abf2e4056c1b534993062a6b}
+      \strng{authorbibnamehash}{4c269a32abf2e4056c1b534993062a6b}
+      \strng{authornamehash}{4c269a32abf2e4056c1b534993062a6b}
+      \strng{authorfullhash}{4c269a32abf2e4056c1b534993062a6b}
+      \strng{authorfullhashraw}{4c269a32abf2e4056c1b534993062a6b}
+      \field{labelalpha}{SKS19}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{edition}{7}
+      \field{title}{Database System Concepts}
+      \field{year}{2019}
     \endentry
   \enddatalist
 \endrefsection
