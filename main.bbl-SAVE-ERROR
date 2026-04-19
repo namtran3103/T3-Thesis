@@ -223,6 +223,182 @@
       \field{title}{LaTeX : A Documentation Preparation System User's Guide and Reference Manual}
       \field{year}{1994}
     \endentry
+    \entry{leis2018job}{article}{}{}
+      \name{author}{7}{}{%
+        {{un=0,uniquepart=base,hash=963c74f650ce23bb4617efc8276c5afb}{%
+           family={Leis},
+           familyi={L\bibinitperiod},
+           given={Viktor},
+           giveni={V\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=3fd94a48970e21c7db575a558fc87619}{%
+           family={Radke},
+           familyi={R\bibinitperiod},
+           given={Bernhard},
+           giveni={B\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=0e05974fb7be79c42dc4b1391088c31f}{%
+           family={Gubichev},
+           familyi={G\bibinitperiod},
+           given={Andrey},
+           giveni={A\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=5b13f7fa15efb925175fe6d2ad0a564a}{%
+           family={Mirchev},
+           familyi={M\bibinitperiod},
+           given={Atanas},
+           giveni={A\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=2b1de98ff92169fc880b28e70579eaa3}{%
+           family={Boncz},
+           familyi={B\bibinitperiod},
+           given={Peter\bibnamedelima A.},
+           giveni={P\bibinitperiod\bibinitdelim A\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=2466c24cd22361559679d58bb1d8da60}{%
+           family={Kemper},
+           familyi={K\bibinitperiod},
+           given={Alfons},
+           giveni={A\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=856106a72d787bcea4281fca718cd7d7}{%
+           family={Neumann},
+           familyi={N\bibinitperiod},
+           given={Thomas},
+           giveni={T\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{7601a1b0ffe6549025b1e5f3f3da869a}
+      \strng{fullhash}{f5e1d332223d48f48677637318bcdd03}
+      \strng{fullhashraw}{f5e1d332223d48f48677637318bcdd03}
+      \strng{bibnamehash}{f5e1d332223d48f48677637318bcdd03}
+      \strng{authorbibnamehash}{f5e1d332223d48f48677637318bcdd03}
+      \strng{authornamehash}{7601a1b0ffe6549025b1e5f3f3da869a}
+      \strng{authorfullhash}{f5e1d332223d48f48677637318bcdd03}
+      \strng{authorfullhashraw}{f5e1d332223d48f48677637318bcdd03}
+      \field{labelalpha}{Lei+18}
+      \field{sortinit}{L}
+      \field{sortinithash}{7c47d417cecb1f4bd38d1825c427a61a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{The VLDB Journal}
+      \field{number}{5}
+      \field{title}{Query optimization through the looking glass, and what we found running the {Join Order Benchmark}}
+      \field{volume}{27}
+      \field{year}{2018}
+      \field{pages}{643\bibrangedash 668}
+      \range{pages}{26}
+      \verb{doi}
+      \verb 10.1007/s00778-017-0480-7
+      \endverb
+    \endentry
+    \entry{dace}{inproceedings}{}{}
+      \name{author}{7}{}{%
+        {{un=0,uniquepart=base,hash=6ac87dc256b62b8cf25f6c0c500e5494}{%
+           family={Liang},
+           familyi={L\bibinitperiod},
+           given={Zibo},
+           giveni={Z\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=4f4900cae2c11cda82284d85107e92ae}{%
+           family={Chen},
+           familyi={C\bibinitperiod},
+           given={Xu},
+           giveni={X\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=272110be8b5f4a4c27cf494a74129f55}{%
+           family={Xia},
+           familyi={X\bibinitperiod},
+           given={Yuyang},
+           giveni={Y\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=8c667741393e163a0585351200627bb6}{%
+           family={Ye},
+           familyi={Y\bibinitperiod},
+           given={Runfan},
+           giveni={R\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=c8db82046d24a480d0c68a36ce381664}{%
+           family={Chen},
+           familyi={C\bibinitperiod},
+           given={Haitian},
+           giveni={H\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=26b8ecb47a5748d170b6bf320059dff9}{%
+           family={Xie},
+           familyi={X\bibinitperiod},
+           given={Jiandong},
+           giveni={J\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=344f5b0e0d962edf27e0a4af939d760a}{%
+           family={Zheng},
+           familyi={Z\bibinitperiod},
+           given={Kai},
+           giveni={K\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{bde105eeb8f77339773f8ea581d6ee76}
+      \strng{fullhash}{653b8797067d9a4922763ab3dcc6b7cd}
+      \strng{fullhashraw}{653b8797067d9a4922763ab3dcc6b7cd}
+      \strng{bibnamehash}{653b8797067d9a4922763ab3dcc6b7cd}
+      \strng{authorbibnamehash}{653b8797067d9a4922763ab3dcc6b7cd}
+      \strng{authornamehash}{bde105eeb8f77339773f8ea581d6ee76}
+      \strng{authorfullhash}{653b8797067d9a4922763ab3dcc6b7cd}
+      \strng{authorfullhashraw}{653b8797067d9a4922763ab3dcc6b7cd}
+      \field{labelalpha}{Lia+24}
+      \field{sortinit}{L}
+      \field{sortinithash}{7c47d417cecb1f4bd38d1825c427a61a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{2024 IEEE 40th International Conference on Data Engineering (ICDE)}
+      \field{title}{DACE: A Database-Agnostic Cost Estimator}
+      \field{year}{2024}
+      \field{pages}{4925\bibrangedash 4937}
+      \range{pages}{13}
+      \verb{doi}
+      \verb 10.1109/ICDE60146.2024.00374
+      \endverb
+      \keyw{Costs;Accuracy;Databases;Computational modeling;Query processing;Redundancy;Estimation;Cost estimation;Query optimization}
+    \endentry
+    \entry{qppnet}{article}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=32f456ef4d3db3608047cf3243a37a81}{%
+           family={Marcus},
+           familyi={M\bibinitperiod},
+           given={Ryan},
+           giveni={R\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=2ae7badd7a7ab5befecec714dc992ce3}{%
+           family={Papaemmanouil},
+           familyi={P\bibinitperiod},
+           given={Olga},
+           giveni={O\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{2695ba8aff5fa9904123c7ffa80208a6}
+      \strng{fullhash}{2695ba8aff5fa9904123c7ffa80208a6}
+      \strng{fullhashraw}{2695ba8aff5fa9904123c7ffa80208a6}
+      \strng{bibnamehash}{2695ba8aff5fa9904123c7ffa80208a6}
+      \strng{authorbibnamehash}{2695ba8aff5fa9904123c7ffa80208a6}
+      \strng{authornamehash}{2695ba8aff5fa9904123c7ffa80208a6}
+      \strng{authorfullhash}{2695ba8aff5fa9904123c7ffa80208a6}
+      \strng{authorfullhashraw}{2695ba8aff5fa9904123c7ffa80208a6}
+      \field{labelalpha}{MP19}
+      \field{sortinit}{M}
+      \field{sortinithash}{4625c616857f13d17ce56f7d4f97d451}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Proc. VLDB Endow.}
+      \field{number}{11}
+      \field{title}{Plan-Structured Deep Neural Network Models for Query Performance Prediction}
+      \field{volume}{12}
+      \field{year}{2019}
+      \field{pages}{1733\bibrangedash 1746}
+      \range{pages}{14}
+      \verb{doi}
+      \verb 10.14778/3342263.3342646
+      \endverb
+    \endentry
     \entry{neumann2011}{article}{}{}
       \name{author}{1}{}{%
         {{un=0,uniquepart=base,hash=856106a72d787bcea4281fca718cd7d7}{%
@@ -284,14 +460,14 @@
       \field{sortinithash}{22369a73d5f88983a108b63f07f37084}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{booktitle}{CIDR}
+      \field{booktitle}{10th Conference on Innovative Data Systems Research (CIDR)}
       \field{title}{Umbra: A Disk-Based System with In-Memory Performance}
       \field{year}{2020}
       \verb{urlraw}
-      \verb https://www.cidrdb.org
+      \verb https://www.cidrdb.org/cidr2020/papers/p29-neumann-cidr20.pdf
       \endverb
       \verb{url}
-      \verb https://www.cidrdb.org
+      \verb https://www.cidrdb.org/cidr2020/papers/p29-neumann-cidr20.pdf
       \endverb
     \endentry
     \entry{t3}{article}{}{}
@@ -386,6 +562,50 @@
       \field{edition}{7}
       \field{title}{Database System Concepts}
       \field{year}{2019}
+    \endentry
+    \entry{jobcomplex}{article}{}{}
+      \name{author}{4}{}{%
+        {{un=0,uniquepart=base,hash=eb8ee16ef5aeaa1631a637aea98a48cc}{%
+           family={Wehrstein},
+           familyi={W\bibinitperiod},
+           given={Johannes},
+           giveni={J\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=ba38dcaf340286bdf786e541ceade5da}{%
+           family={Eckmann},
+           familyi={E\bibinitperiod},
+           given={Timo},
+           giveni={T\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=580cd9f35c9900ddc0c9f32b81c30345}{%
+           family={Heinrich},
+           familyi={H\bibinitperiod},
+           given={Roman},
+           giveni={R\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=49248cdf8355c6d096189e2667358696}{%
+           family={Binnig},
+           familyi={B\bibinitperiod},
+           given={Carsten},
+           giveni={C\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{900df886fd963a4ee480e1bbd9f2ad3c}
+      \strng{fullhash}{900df886fd963a4ee480e1bbd9f2ad3c}
+      \strng{fullhashraw}{900df886fd963a4ee480e1bbd9f2ad3c}
+      \strng{bibnamehash}{900df886fd963a4ee480e1bbd9f2ad3c}
+      \strng{authorbibnamehash}{900df886fd963a4ee480e1bbd9f2ad3c}
+      \strng{authornamehash}{900df886fd963a4ee480e1bbd9f2ad3c}
+      \strng{authorfullhash}{900df886fd963a4ee480e1bbd9f2ad3c}
+      \strng{authorfullhashraw}{900df886fd963a4ee480e1bbd9f2ad3c}
+      \field{labelalpha}{Weh+25}
+      \field{sortinit}{W}
+      \field{sortinithash}{4315d78024d0cea9b57a0c6f0e35ed0d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{arXiv preprint arXiv:2507.07471}
+      \field{title}{JOB-Complex: A Challenging Benchmark for Traditional \& Learned Query Optimization}
+      \field{year}{2025}
     \endentry
   \enddatalist
 \endrefsection

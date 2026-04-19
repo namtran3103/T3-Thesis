@@ -15,7 +15,8 @@ The predicted query runtime is the sum of these per-pipeline predictions.
 
 \section{Data and Preprocessing}
 Regarding the training data, we use the public Zero-Shot benchmark data introduced with the Zero-Shot Cost Model.  
-The benchmark is particularly suitable for this thesis because it consists of real-world datasets (e.g., IMDB) and established benchmark workloads (e.g., SSB, TPC-H and JOB).
+The benchmark is particularly suitable for this thesis because it consists of real-world datasets (e.g., IMDB) and synthetically generated workloads designed to cover diverse query structures.
+This includes \emph{SPAJ} (Select-Project-Aggregate-Join) queries with conjunctive predicates.
 Overall, the benchmark contains 20 databases with large variation in tables, columns, and foreign-key relationships \parencite{zeroshot}.
 
 Having this multitude of databases allows us to test the generalization capabilities of our model.
@@ -203,7 +204,7 @@ Each pipeline's feature vector consists of two concatenated blocks, as Figure~\r
   From the available \texttt{pg} payload, we try to extract as distinct information as possible.
 
   Therefore, we start by summarizing different information categories per pipeline with sum, max, and average statistics.
-  First, the \texttt{pg\_act\_card\_...} fields capture output cardinality summaries.
+  First, the \texttt{pg\_card\_...} fields capture output cardinality summaries.
   
   Insights about PostgreSQL-specific cost, parallelism, and width features are captured in the
   \texttt{pg\_est\_cost\_...},
@@ -232,7 +233,7 @@ Each pipeline's feature vector consists of two concatenated blocks, as Figure~\r
   Finally, we include the operator count "\texttt{const}", which exists for every operator type in both our and the Umbra/T3 implementation ~\parencite{t3}.
 \end{enumerate}
 
-In total, the feature vector is fixed and has 154 dimensions (24 pipeline-level features and 130 operator-type features).
+In total, the feature vector is fixed and has 153 dimensions (23 pipeline-level features and 130 operator-type features).
 Empty features are zeroed to keep the feature vector dimension.
 
 Regarding the cardinalities, either the actual or the estimated cardinalities are used in the feature vector, depending on which is selected in training.
@@ -249,10 +250,10 @@ We proceed to train the model in the next section.
   \setlength{\tabcolsep}{5pt}
   \begin{tabular}{@{}l r@{}}
     \toprule
-    \multicolumn{2}{@{}l}{\emph{Pipeline-level block (excerpt; first 12 of 24 features)}} \\
+    \multicolumn{2}{@{}l}{\emph{Pipeline-level block (excerpt; first 12 of 23 features)}} \\
     \midrule
-    \texttt{pg\_act\_card\_sum} & 6541.0 \\
-    \texttt{pg\_act\_card\_max} & 6537.0 \\
+    \texttt{pg\_card\_sum} & 6541.0 \\
+    \texttt{pg\_card\_max} & 6537.0 \\
     \texttt{pg\_est\_cost\_sum} & 16882.95 \\
     \texttt{pg\_est\_cost\_max} & 16877.3 \\
     \texttt{pg\_est\_startup\_sum} & 125.82 \\
@@ -276,7 +277,7 @@ We proceed to train the model in the next section.
   \caption[Excerpt of a PostgreSQL-native pipeline feature vector]
   {Excerpts of the pipeline-level block (first twelve features) and of the \texttt{Nested\_Loop} operator entries in the operator-type block. 
   They are from one pipeline of query \texttt{index\_workload\_100k\_s2\_c8220\_890} on the TPC-H database. 
-  The full vector has 154 dimensions; remaining pipeline and operator entries are omitted.}
+  The full vector has 153 dimensions; remaining pipeline and operator entries are omitted.}
   \label{fig:pg-feature-vector-snippet}
 \end{figure}
 
@@ -325,7 +326,14 @@ Model training and evaluation for the results reported in this thesis were run o
 
 \section{Other Performance Prediction Implementations}
 
-Add other implementations that you want to compare to in evaluation.
+Next to already described T3 and Zeroshot...
+
+\paragraph{T3-based Models with Different Feature Vectors.}
+
+Wehrstein et al.~\parencite{jobcomplex} also adapted the Umbra T3 model for PostgreSQL.
+They use a hybrid feature vector that takes the original Umbra feature vector, and maps matching PostgreSQL operators to Umbra operators.
+On top of that, they add additional features that are specific to PostgreSQL, like the Merge Join operator.
+However, they do not use fields that account for PostgreSQL-specific characteristics, like the planned workers or the estimated startup cost fields we use for our model ~\parencite{jobcomplex}.
 
 \section{Section}
 Citation test~\parencite{latex}.

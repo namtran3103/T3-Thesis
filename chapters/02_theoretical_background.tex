@@ -11,7 +11,7 @@ a declarative language that lets users specify what data they want rather than h
 For example, a simple SQL query might select all orders placed by a particular customer by joining an \texttt{orders} table with a \texttt{customers} table and filtering by a customer name.
 Because SQL describes the desired result and not the retrieval procedure, the DBMS is free to choose any execution strategy that produces the correct answer.
 
-When a DBMS receives an SQL query, it processes the query in several successive phases~\parencite{silberschatz2019}:
+When a DBMS receives an SQL query, it processes the query in several successive phases~\parencite{silberschatz2019, postgresql_docs_query_path}:
 
 \begin{enumerate}
   \item \textbf{Parsing.}
@@ -72,13 +72,13 @@ This makes \texttt{EXPLAIN ANALYZE} output the primary source of per-operator ti
 
 A key advantage of the iterator model is its simplicity and composability.
 New operators can be added independently, as long as they implement the three-call interface.
-However, this design also has a well-known downside: calling \texttt{next()} individually for every single tuple introduces per-tuple function call overhead and hurts CPU branch prediction and cache behavior~\parencite{graefe1994}.
+However, this design also has a well-known downside: calling \texttt{next()} individually for every single tuple introduces per-tuple function call overhead and hurts CPU branch prediction and cache behavior~\parencite{graefe1994, neumann2011}.
 This is one reason why more recent systems like Umbra take a different approach and compile query plans to native code, as described in the next subsection.
 
 \subsection{Compiled Query Execution (Umbra)}
 
 Umbra is a relational DBMS developed at the Technical University of Munich that is designed for high performance on modern hardware~\parencite{umbra2020}.
-Unlike PG's interpreter-based approach, Umbra takes a fundamentally different execution strategy: it compiles each query plan into native machine code at query time, using the LLVM compiler framework~\parencite{neumann2011}.
+Unlike PG's interpreter-based approach, Umbra takes a fundamentally different execution strategy: it compiles each query plan into native machine code at query time, using the LLVM compiler framework~\parencite{umbra2020, neumann2011}.
 
 The motivation for this is to eliminate the per-tuple overhead of the iterator model.
 Recall that in PG's pull-based execution, every single tuple causes a chain of \texttt{next()} calls to travel through the operator tree.
@@ -139,6 +139,7 @@ The pipelines and their structure are also the basis for the feature vectors use
 sowas auch schreiben wie ssb, tpch, etc.
 
 \subsection{Error Metrics}
+q-error und percentile.
 
 \subsection{Traditional Cost Models and Learned Approaches}
 

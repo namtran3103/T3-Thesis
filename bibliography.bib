@@ -37,14 +37,6 @@ url = {https://papers.nips.cc/paper/6907-lightgbm-a-highly-efficient-gradient-bo
 @inproceedings{umbra2020,
   author    = {Neumann, Thomas and Freitag, Michael J.},
   title     = {Umbra: A Disk-Based System with In-Memory Performance},
-  booktitle = {CIDR},
-  year      = {2020},
-  url       = {https://www.cidrdb.org}
-}
-
-@inproceedings{umbra2020,
-  author    = {Neumann, Thomas and Freitag, Michael J.},
-  title     = {Umbra: A Disk-Based System with In-Memory Performance},
   booktitle = {10th Conference on Innovative Data Systems Research (CIDR)},
   year      = {2020},
   url       = {https://www.cidrdb.org/cidr2020/papers/p29-neumann-cidr20.pdf}
@@ -87,6 +79,17 @@ url = {https://papers.nips.cc/paper/6907-lightgbm-a-highly-efficient-gradient-bo
   url          = {https://www.postgresql.org/docs/16/query-path.html}
 }
 
+@article{leis2018job,
+  author    = {Leis, Viktor and Radke, Bernhard and Gubichev, Andrey and Mirchev, Atanas and Boncz, Peter A. and Kemper, Alfons and Neumann, Thomas},
+  title     = {Query optimization through the looking glass, and what we found running the {Join Order Benchmark}},
+  journal   = {The VLDB Journal},
+  year      = {2018},
+  volume    = {27},
+  number    = {5},
+  pages     = {643--668},
+  doi       = {10.1007/s00778-017-0480-7}
+}
+
 @article{zeroshot,
 author = {Hilprecht, Benjamin and Binnig, Carsten},
 title = {Zero-shot cost models for out-of-the-box learned cost prediction},
@@ -104,3 +107,74 @@ month = jul,
 pages = {2361–2374},
 numpages = {14}
 }
+
+@article{jobcomplex,
+  title={JOB-Complex: A Challenging Benchmark for Traditional \& Learned Query Optimization},
+  author={Wehrstein, Johannes and Eckmann, Timo and Heinrich, Roman and Binnig, Carsten},
+  journal={arXiv preprint arXiv:2507.07471},
+  year={2025}
+}
+
+@article{queryformer,
+  author    = {Zhao, Yue and Cong, Gao and Shi, Jiachen and Miao, Chunyan},
+  title     = {{QueryFormer}: A Tree Transformer Model for Query Plan Representation},
+  journal   = {Proc. VLDB Endow.},
+  year      = {2022},
+  volume    = {15},
+  number    = {8},
+  pages     = {1658--1670},
+  doi       = {10.14778/3529337.3529349}
+}
+
+@article{e2e,
+  author    = {Sun, Ji and Li, Guoliang},
+  title     = {An End-to-End Learning-based Cost Estimator},
+  journal   = {Proc. VLDB Endow.},
+  year      = {2019},
+  volume    = {13},
+  number    = {3},
+  pages     = {307--319},
+  doi       = {10.14778/3368088.3368093}
+}
+
+@article{neo,
+  author    = {Marcus, Ryan and Negi, Parimarjan and Mao, Hongzi and Zhang, Chi and Alizadeh, Mohammad and Kraska, Tim and Papaemmanouil, Olga and Tatbul, Nesime},
+  title     = {Neo: A Learned Query Optimizer},
+  journal   = {Proc. VLDB Endow.},
+  year      = {2019},
+  volume    = {12},
+  number    = {11},
+  pages     = {1705--1718},
+  doi       = {10.14778/3342263.3342644}
+}
+
+@article{qppnet,
+  author    = {Marcus, Ryan and Papaemmanouil, Olga},
+  title     = {Plan-Structured Deep Neural Network Models for Query Performance Prediction},
+  journal   = {Proc. VLDB Endow.},
+  year      = {2019},
+  volume    = {12},
+  number    = {11},
+  pages     = {1733--1746},
+  doi       = {10.14778/3342263.3342646}
+}
+
+@inproceedings{mscn,
+  author    = {Kipf, Andreas and Kipf, Thomas and Radke, Bernhard and Leis, Viktor and Boncz, Peter A. and Kemper, Alfons},
+  title     = {Learned Cardinalities: Estimating Correlated Joins with Deep Learning},
+  booktitle = {9th Conference on Innovative Data Systems Research (CIDR)},
+  year      = {2019},
+  url       = {https://www.cidrdb.org/cidr2019/papers/p101-kipf-cidr19.pdf}
+}
+
+@INPROCEEDINGS{dace,
+  author={Liang, Zibo and Chen, Xu and Xia, Yuyang and Ye, Runfan and Chen, Haitian and Xie, Jiandong and Zheng, Kai},
+  booktitle={2024 IEEE 40th International Conference on Data Engineering (ICDE)}, 
+  title={DACE: A Database-Agnostic Cost Estimator}, 
+  year={2024},
+  volume={},
+  number={},
+  pages={4925-4937},
+  keywords={Costs;Accuracy;Databases;Computational modeling;Query processing;Redundancy;Estimation;Cost estimation;Query optimization},
+  doi={10.1109/ICDE60146.2024.00374}}
+
