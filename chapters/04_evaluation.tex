@@ -95,6 +95,7 @@ Like before, they had the full 113 queries at disposal. We again use the 57th-be
 
 Although we are in the worst-case-scenario, our model clearly outperforms Wehrstein et al.'s model, as Figure~\ref{fig:comp_wehrstein} shows.
 A key difference between the models is the used feature vector, where only our model uses a completely PostgreSQL-native feature vector.
+Hence, we demonstrate the relevance of PostgreSQL-native features.
 
 
 \begin{figure}[htpb]
@@ -115,6 +116,7 @@ Our model is in the top 4, coming in at 2.42, even when using a worst-case-scena
 The remaining models are neural network-based estimators, such as QPPNet~\parencite{qppnet}.
 They show a significant accuracy gap to the top performers, with median Q-Errors ranging from 8 to 18.
 Finally, PostgreSQL's untrained, built-in cost estimator performs worst by a very large margin at a median Q-Error of over 1000, confirming the need for learned approaches.
+Regarding learned approaches, not only neural networks can perform, but also decision trees like T3 for PostgreSQL.
 
 
 \begin{table}[htpb]
