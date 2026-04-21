@@ -607,6 +607,94 @@
       \field{title}{JOB-Complex: A Challenging Benchmark for Traditional \& Learned Query Optimization}
       \field{year}{2025}
     \endentry
+    \entry{stage}{inproceedings}{}{}
+      \name{author}{10}{}{%
+        {{un=0,uniquepart=base,hash=bf28ed81f67fcc7d8c1aba5160586e4e}{%
+           family={Wu},
+           familyi={W\bibinitperiod},
+           given={Ziniu},
+           giveni={Z\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=32f456ef4d3db3608047cf3243a37a81}{%
+           family={Marcus},
+           familyi={M\bibinitperiod},
+           given={Ryan},
+           giveni={R\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=600db7c591492769c2fcc49f606fb99a}{%
+           family={Liu},
+           familyi={L\bibinitperiod},
+           given={Zhengchun},
+           giveni={Z\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=461ba0454e196bdcd84dd5f5b9095a24}{%
+           family={Negi},
+           familyi={N\bibinitperiod},
+           given={Parimarjan},
+           giveni={P\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=d81debf3d5967436f44fd22cafa7f473}{%
+           family={Nathan},
+           familyi={N\bibinitperiod},
+           given={Vikram},
+           giveni={V\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=b36ad41f4db074ffc1c0e4a5044b435a}{%
+           family={Pfeil},
+           familyi={P\bibinitperiod},
+           given={Pascal},
+           giveni={P\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=dda2193834bfa15153acc082cb71d6ca}{%
+           family={Saxena},
+           familyi={S\bibinitperiod},
+           given={Gaurav},
+           giveni={G\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=a41653a649374f0fba8b452345d67715}{%
+           family={Rahman},
+           familyi={R\bibinitperiod},
+           given={Mohammad},
+           giveni={M\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=05bd9d4866d4c36becf9db726f6d4c23}{%
+           family={Narayanaswamy},
+           familyi={N\bibinitperiod},
+           given={Balakrishnan},
+           giveni={B\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=06236ad5a15ffd4505a97a20555a384b}{%
+           family={Kraska},
+           familyi={K\bibinitperiod},
+           given={Tim},
+           giveni={T\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {ACM}%
+      }
+      \strng{namehash}{35f099d462f7e4cb8417e6073bcacf37}
+      \strng{fullhash}{05895eea2c787cc30ee7e634b4936e48}
+      \strng{fullhashraw}{05895eea2c787cc30ee7e634b4936e48}
+      \strng{bibnamehash}{05895eea2c787cc30ee7e634b4936e48}
+      \strng{authorbibnamehash}{05895eea2c787cc30ee7e634b4936e48}
+      \strng{authornamehash}{35f099d462f7e4cb8417e6073bcacf37}
+      \strng{authorfullhash}{05895eea2c787cc30ee7e634b4936e48}
+      \strng{authorfullhashraw}{05895eea2c787cc30ee7e634b4936e48}
+      \field{labelalpha}{Wu+24}
+      \field{sortinit}{W}
+      \field{sortinithash}{4315d78024d0cea9b57a0c6f0e35ed0d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Companion of the 2024 International Conference on Management of Data (SIGMOD)}
+      \field{title}{Stage: Query Execution Time Prediction in {Amazon Redshift}}
+      \field{year}{2024}
+      \field{pages}{280\bibrangedash 294}
+      \range{pages}{15}
+      \verb{doi}
+      \verb 10.1145/3626246.3653396
+      \endverb
+    \endentry
   \enddatalist
 \endrefsection
 \endinput

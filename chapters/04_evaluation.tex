@@ -13,21 +13,31 @@ Therefore, we detach our results from the ongoing issue of accurately estimating
 Figure~\ref{fig:database_q} shows the generalization capabilities of our model across different, unseen database instances.
 This is ensured by training the model on all databases except the one being tested.
 
-We see low p50 values across all databases and higher p90 and average values – we consider this a good accuracy performance.
-The median Q-Error is below 1.5 for all databases and does not vary much across databases.
-Although we find more variation in the average and p90 values, we conclude that the model is able to generalize across unseen database instances.
+The median Q-Error (p50) stays below 1.33 for all databases,
+ranging from 1.07 (Walmart) to 1.32 (Basketball),
+indicating consistently good accuracy on unseen databases.
+We observe that the p90 and average values show more variation across databases:
+p90 ranges from 1.30 (Walmart) to 3.32 (Basketball),
+and the average from 1.13 (Walmart) to 2.92 (Hepatitis).
+This reflects that a small number of harder-to-predict queries
+drive up the tail and mean errors for some databases.
+Despite the increased variation in the average and p90 values, we conclude that the model is able to generalize across unseen database instances.
 This finding applies to the queries of the ZeroShot training data we used.
 
-Since we took the same data as the ZeroShot model, the median values indicate a comparable generalization performance to the ZeroShot model. 
-Their median values across databases are in the same range~\parencite{zeroshot}.
+Since we trained on the same data as the ZeroShot model, it is reasonable to compare the median values of our model to theirs.
+As their median values across databases are in the same range~\parencite{zeroshot}, we infer that our model has a comparable generalization performance.
 
 \paragraph{Frequency Distribution.}
-Figure~\ref{fig:qerror_freq} gives us a frequency distribution example of our model on the JOB-Benchmark
-(we will use the JOB-Benchmark further in the evaluation).
-Since the average and p90 values are higher than the p50 value across all databases, the distribution we observe is expected.
-
-The majority of queries have a low Q-Error and only a few queries have a higher Q-Error.
-With this skewed distribution we explain the higher average and p90 values.
+Figure~\ref{fig:qerror_freq} shows the Q-Error frequency distribution of our model on the JOB benchmark
+(which we use further in the evaluation).
+The distribution is heavily right-skewed: the majority of the 77 queries are predicted with a Q-Error
+close to 1, with a median of 1.33.
+However, a small number of queries have considerably higher errors,
+pulling the average up to 1.89 and the 90th percentile to 3.41,
+with the worst-predicted query reaching a Q-Error of 7.43.
+This skewed distribution explains the general pattern visible in Figure~\ref{fig:database_q}:
+the p50 stays low and stable across databases,
+while the average and p90 are more sensitive to a few hard-to-predict outliers.
 \begin{figure}[htpb]
   \centering
   \includegraphics[width=\textwidth]{figures/database_q.png}
@@ -47,7 +57,7 @@ With this skewed distribution we explain the higher average and p90 values.
 
 The original T3 model for Umbra by Rieger and Neumann~\parencite{t3} and the ZeroShot model~\parencite{zeroshot} offer very good generalization performance across unseen databases.
 Because T3 (Umbra) uses different queries for generalization testing, we cannot directly compare the generalization performance of our model to theirs.
-However, Rieger \& Neumann compared both models on the JOB-Benchmark and reported excellent performance for both models~\parencite{t3}.
+But, Rieger \& Neumann compared both models on the JOB-Benchmark and reported excellent performance for both models~\parencite{t3}.
 
 We also have JOB queries available for evaluation, so we can compare the models on that.
 In the original comparison, Rieger \& Neumann compare the p50, p90, and average Q-Error values.
@@ -56,12 +66,12 @@ They had all 113 JOB queries available for evaluation.
 However, the provided ZeroShot training data came with data limitations.
 Namely, longer-running queries are not included~\parencite{zeroshot}, so we only have 77 JOB queries available for evaluation.
 As the number of total queries differ, it is not sensible to compare the p50 and p90 Q-Error values directly.
-If the missing queries had a very high Q-Error, the p50 value of our model would be higher than now and comparing using the current p50 value would be misleading.
+If the missing queries had a very high Q-Error, the p50 value of our model would be higher than now and using the current p50 value would be misleading.
 This also applies to the p90 value.
 
 Considering how the median is calculated, we end up with the 57th-best Q-Error value when we take the p75 Q-Error of our model.
 The 57th-highest Q-Error (p75) also corresponds to the p50 error of the ZeroShot and T3 (Umbra) models.
-Therefore, even if the missing queries had very high errors, the "new" p50 value would not get worse than the current p75 value.
+Therefore, even if the missing queries had very high errors, the new p50 value would not get worse than the current p75 value.
 Hence, we can use it as a lower bound for the median performance of our model and compare it in Figure~\ref{fig:57th_comparison}.
 
 In this case, our model performs worse than the ZeroShot and T3 (Umbra) models on the JOB-Benchmark.
@@ -71,7 +81,8 @@ With lower Q-Errors on the missing queries, the new 57th-highest (p50) value wou
 To further narrow down the comparison, we also include the average Q-Error values in Figure~\ref{fig:avg_comparison}.
 Although we only have 70\% of the queries available for the calculation on our model, we still see a notable trend. 
 Decision trees like T3 offer SOTA performance on average for Umbra, followed by ZeroShot.
-Our model, a T3-based implementation for PostgreSQL, tends to perform worse, but still is a good starting point.
+Our model, a T3-based implementation for PostgreSQL, tends to perform worse, but the difference on average is smaller than on percentiles.
+Thus, it is still is a good starting point.
 
 \begin{figure}[htpb]
   \centering
@@ -91,7 +102,7 @@ Our model, a T3-based implementation for PostgreSQL, tends to perform worse, but
 \paragraph{T3-based Models with Different Feature Vectors.}
 
 Wehrstein et al. ran the JOB-Benchmark on their T3-based model and reported a median Q-Error of 4.07, using estimated cardinalities~\parencite{jobcomplex}.
-Like before, they had the full 113 queries at disposal. We again use the 57th-best (p75) Q-Error value for the comparison with our model, this time selecting cardinality estimates.
+Like before, they had the full 113 queries at disposal. We again use the 57th-best (p75) Q-Error value for the comparison with our model, this time selecting cardinality estimates to match their setup.
 
 Although we are in the worst-case-scenario, our model clearly outperforms Wehrstein et al.'s model, as Figure~\ref{fig:comp_wehrstein} shows.
 A key difference between the models is the used feature vector, where only our model uses a completely PostgreSQL-native feature vector.
@@ -141,10 +152,115 @@ Regarding learned approaches, not only neural networks can perform, but also dec
 \end{table}
 
 \section{Ablation Study}\label{sec:evaluation_ablation}
-\subsection{PostgreSQL-native Features vs. Direct Transfer}\label{subsec:eval_pg_vs_umbra_features}
-\subsection{Actual vs. Estimated Cardinalities}
+\paragraph{Actual vs. Estimated Cardinalities.}
 
-\subsection{Pipeline vs Tuple targets}
+Figure~\ref{fig:card_comparison} shows prediction accuracy under three cardinality conditions.
+For each condition, we used the model variant trained under the matching setting.
+Therefore, for a query from database $X$, we used the model
+that was trained on all databases except $X$ and used the corresponding cardinality type.
+This ensures the correctness of the comparison.
+
+Using exact cardinalities for both training and evaluation gives the best results.
+This is a setting of our thesis, where we do not investigate the cardinality estimation issue.
+When, for the models trained on actual cardinalities, we switch to estimated cardinalities for evaluation, accuracy degrades.
+The median Q-Error increases only moderately,
+while the p90 and average Q-Error rise more sharply.
+Hence, it reflects that large cardinality estimation errors lead to large performance prediction errors
+for a subset of queries, disproportionately affecting the p90 errors and the average~\parencite{t3}.
+The same asymmetric degradation pattern has been observed for other performance prediction models~\parencite{stage}.
+
+Training on estimated instead of exact cardinalities partially compensates for this effect.
+The model trained and evaluated on estimated cardinalities achieves
+a lower average Q-Error than the model trained on exact cardinalities but evaluated on estimated ones.
+Thus, this demonstrates that the model can somewhat learn to account for the systematic biases of the cardinality estimator~\parencite{leis2018job}.
+However, the p90 Q-Error stays at a similar, high level in both estimated-cardinality settings, indicating that a small number of heavy outliers remain.
+
+We conclude that incorrect cardinality estimates distort performance prediction accuracy substantially.
+Cardinality estimation remains an important and unsolved problem~\parencite{leis2018job},
+and improvements in cardinality estimation would directly benefit performance prediction.
+
+\begin{figure}[htpb]
+  \centering
+  \includegraphics[width=\textwidth]{figures/card_comparison.png}
+  \caption[Cardinality Mode Comparison]{Q-Error (p50, p90, and average) over all queries under three cardinality settings: trained and evaluated on exact cardinalities, trained on exact but evaluated on estimated cardinalities, and trained and evaluated on estimated cardinalities.}\label{fig:card_comparison}
+\end{figure}
+
+
+\paragraph{Query vs. Pipeline vs. Tuple Targets.}
+
+Figure~\ref{fig:query_pipeline_tuple} compares Q-Error across three prediction granularities:
+per-query, per-pipeline, and per-tuple.
+This directly copies the evaluation of Rieger and Neumann~\parencite{t3},
+who find that finer granularities consistently improve accuracy —
+with per-tuple being best and per-query being worst.
+We observe the opposite: the per-query model achieves the lowest Q-Error across all three metrics,
+while per-pipeline and per-tuple models perform noticeably worse.
+
+The core issue is the reliability of the per-pipeline execution times
+that can be extracted from PostgreSQL's \texttt{EXPLAIN ANALYZE} output in the ZeroShot dataset~\parencite{postgresql_docs_query_path}.
+In Umbra, pipeline breakers require full materialization before any downstream pipeline
+can begin scanning their output~\parencite{t3},
+making pipelines sequential execution units
+whose individual durations sum to the total query time.
+
+Unlike Umbra, PostgreSQL query plans do not expose pipeline execution times directly.
+Instead, they must be derived from the per-node durations recorded by
+\texttt{EXPLAIN ANALYZE}~\parencite{postgresql_docs_query_path}.
+
+However, PostgreSQL uses the Volcano iterator model~\parencite{graefe1994},
+which does not execute pipelines as separate sequential units.
+
+For example, a hash join operator (belonging to pipeline P1)
+builds its hash table by calling \texttt{next()} on its input table scan (belonging to pipeline P0)
+one tuple at a time.
+The join and the scan therefore execute interleaved over the same wall-clock period:
+the join is active from its first \texttt{next()} call to the moment the hash table is complete,
+and the scan is active during every individual tuple fetch within that same period.
+\texttt{EXPLAIN ANALYZE} records the total wall-clock interval for each node,
+so both the join (P1) and the scan (P0) receive overlapping time intervals —
+even though they belong to different derived pipelines.
+
+When these node durations are aggregated into per-pipeline times and then summed,
+the overlapping portion is counted twice,
+so the sum of pipeline runtimes exceeds the actual query execution time.
+A model trained to predict query runtime as the sum of pipeline runtimes
+will therefore over-predict, increasing Q-Error.
+
+As a concrete example, in plan 2 of \texttt{tpch/workload\_100k\_s1\_c8220},
+pipeline P0 (table scan) is recorded from $t = 946$ms to $t = 2{,}156$ms,
+giving a span of 1{,}210ms.
+Further, Pipeline P1 (table scan, join) is recorded from $t = 0$ms to $t = 2{,}185$ms,
+giving a span of 2{,}185ms.
+Thus, P0 is entirely nested inside P1's time window,
+so the 1{,}210ms during which both pipelines are simultaneously open
+is counted once in P0 and again in P1.
+When summed, the two spans alone already yield 3{,}395ms,
+yet the actual query execution time is only 2{,}239ms —
+an overcount of 52\%.
+
+The per-tuple approach, which divides the pipeline runtime into per-tuple runtimes, is additionally weakened by a difference in dataset characteristics.
+In T3, the query execution time span is larger than $10^{-5}$\,s to $10$\,s~\parencite{t3}.
+Thus, Rieger and Neumann identify this wide range as the primary motivation for the per-tuple approach.
+Decision trees have a limited number of discrete leaf values and
+struggle to predict accurately over such a large range.
+Hence, normalizing by tuple count compresses the prediction target and improves accuracy~\parencite{t3}.
+However, in our PostgreSQL dataset, query execution times span a much narrower range,
+as visible in Figure~\ref{fig:query_runtime_hist}.
+
+Subsequently, with a narrower range and per-pipeline targets that are already unreliable,
+the per-tuple decomposition provides no accuracy benefit and introduces additional inaccuracies instead.
+
+\begin{figure}[htpb]
+  \centering
+  \includegraphics[width=\textwidth]{figures/query_pipeline_tuple.png}
+  \caption[Prediction Granularity Comparison]{Q-Error (p50, p90, and average) for three prediction granularities over all queries: per-query, per-pipeline, and per-tuple.}\label{fig:query_pipeline_tuple}
+\end{figure}
+
+\begin{figure}[htpb]
+  \centering
+  \includegraphics[width=\textwidth]{figures/query_runtime_hist.png}
+  \caption[Query Running Time Distribution]{Distribution of all query running times of the ZeroShot dataset.}\label{fig:query_runtime_hist}
+\end{figure}
 
 
 \section{Section}
