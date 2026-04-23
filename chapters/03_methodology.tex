@@ -3,15 +3,29 @@
 
 \chapter{Methodology}\label{chapter:methodology}
 
+
 \section{Problem Statement and Prediction Target}
 
 In this thesis, we address the transfer of the T3 runtime prediction approach from Umbra to PostgreSQL parsed plans.  
-The central methodological goal is to preserve T3’s core modeling principles.
+The central methodological goal is to preserve T3’s good generalization performance.
 Upon that, we adapt plan conversion and feature extraction to PostgreSQL-specific plan information.
 
-The final prediction target is total query runtime.  
-Each query plan is decomposed into pipelines and the model predicts a duration for each pipeline.
-The predicted query runtime is the sum of these per-pipeline predictions.
+The final prediction target is total query runtime.
+Each query plan is first decomposed into pipelines and a feature vector is computed for each pipeline.
+These per-pipeline feature vectors are then summed into a single query-level feature vector,
+from which the model directly predicts the total query runtime in one step.
+The pipeline decomposition is therefore used for feature extraction,
+not as a separate prediction unit.
+We retain it instead of opting for a complete query-level feature vector for three reasons.
+By mirroring T3's pipeline-based feature design~\parencite{t3},
+we can use the same pipeline-centric features such as operator percentages, which are only well-defined within a pipeline boundary.
+Further, following T3's ablation study enables a more thorough comparison
+of all three prediction granularities in our setting
+(Section~\ref{sec:evaluation_ablation}). This comparison is only possible with the pipeline decomposition.
+Finally, PostgreSQL-specific issues affect the per-pipeline and per-tuple approaches
+in our setting, as discussed in the evaluation (Section~\ref{sec:evaluation_ablation}).
+Subsequently, the pipeline decomposition keeps the implementation extensible
+so that future work can build on it if those issues are addressed.
 
 \section{Data and Preprocessing}
 Regarding the training data, we use the public Zero-Shot benchmark data introduced with the Zero-Shot Cost Model.  
@@ -24,7 +38,7 @@ Similar to the T3 paper, we can train the model on all but one databases and tes
 Moreover, as the widely used JOB workload is included, we can compare our performance predictions to other implementations later on.
 Further, PostgreSQL is the intended database system of our implementation, which avoids the effort of building a separate PostgreSQL benchmark.
 
-Following the benchmark construction described in the paper, queries are generated per database and executed on a PostgreSQL DBMS (v12) on c8220 nodes on the CloudLab platform.
+Following the benchmark construction described in the ZeroShot paper~\parencite{zeroshot}, queries are generated per database and executed on a PostgreSQL DBMS (v12) on c8220 nodes on the CloudLab platform.
 Then, they are stored as raw traces (i. e., the output of \texttt{EXPLAIN ANALYZE}).
 Next, the authors preprocess the queries to remove very long-running queries (queries above 30\,s are excluded) to keep the benchmark practical and reproducible \parencite{zeroshot}.
 A further preprocessing step is to parse the raw traces into structured plan representations.
@@ -129,7 +143,7 @@ Once all the plans are converted and the feature vectors are created, we can tra
 
 We start from one element, i. e., one plan, of the \texttt{parsed\_plans} array in the benchmark JSON files.
 An object in the array is a rooted tree: every node carries \texttt{plan\_parameters} (operator name, estimated and actual cardinalities, 
-tuple width, planner costs, optional filter predicates, timings, and further fields) and a list \texttt{children} of child subtrees.
+estimated tuple width, planner costs, optional filter predicates, timings, and further fields) and a list \texttt{children} of child subtrees.
 
 
 In \texttt{zeroshot\_to\_t3.py}, we convert this tree recursively into the same nested operator structure
@@ -154,13 +168,15 @@ Umbra plans group operators into \emph{pipelines}: sets of operators that can pr
 Namely these are operators/stages, where data is materialized. For instance, sorting, grouping, or materialization, but also the build side of a hash join~\parencite{t3}.
 
 Since PostgreSQL plans do not provide such a pipeline breakdown, we need to derive it from the converted tree.
-We assign each node to a pipeline by walking the converted tree with the same high-level rules as in the T3 work.
+We assign each node to a pipeline by walking the converted tree with the same high-level rules as in the original T3 implementation~\parencite{t3}.
 Thus, PG's sort and aggregate nodes break pipelines; a PG-materialize node is treated as a breaker.
 Joins place the build side in one pipeline and keep the join together with the probe side in the other pipeline.
 The pipeline assignment is stored in the \texttt{analyzePlanPipelines} list of the converted plan.
 
-For every pipeline, we derive start and stop times.
-They stem from the per-node actual timings in \texttt{plan\_parameters} and are accumulated, so that pipeline durations are available for further usage during training.
+For every pipeline, we also derive start and stop times from the per-node actual timings in \texttt{plan\_parameters}.
+These pipeline durations are not used by the primary model,
+but are available for the per-pipeline and per-tuple prediction variants evaluated in the ablation study
+(Section~\ref{sec:evaluation_ablation}).
 
 \subsection{PostgreSQL-Native Feature Vectors}
 
@@ -183,17 +199,21 @@ Our feature vector differs from the original T3 feature vector in the following 
   Consequently, we can include this information in the feature vector.
   \item \textbf{Planned parallelism.} Another PostgreSQL-specific signal is the planned parallelism. So, we take the sum of \texttt{workers\_planned} over all operators in the pipeline.
   Hereby, we include a parallelism signal in our feature vector.
-  \item \textbf{Sizes.} T3 uses tuple sizes in its feature vector. This information is provided by the Umbra plans.
-  However, the parsed PostgreSQL do not contain a perfect equivalent. 
-  Instead, they report a single width estimate per node (\texttt{est\_width}).
-  Thus, an average of \texttt{est\_width} over all operators in the pipeline is used to represent sizes in the feature vector, replacing the tuple size features of T3.
+  \item \textbf{Sizes.} T3 uses the size of output tuples in bytes for materializing operators~\parencite{t3}.
+  In Umbra, T3 derives the tuple size by summing the per-attribute byte sizes from the operator's IU (information unit) list,
+  giving a precise estimate of the tuple byte width.
+  PostgreSQL provides a direct semantic equivalent: \texttt{est\_width},
+  the planner's estimated average output row width in bytes per node.
+  Subsequently, we use \texttt{est\_width} as the tuple size for each operator.
+  The main difference to the Umbra approach is that \texttt{est\_width} is a pre-aggregated planner estimate
+  rather than a sum of per-attribute type metadata.
 \end{enumerate}
 
 In the Umbra feature vector of T3, rows are indexed by both operator type and execution phase (scan, build, probe, \ldots) like \texttt{HashJoin\_Probe\ldots}~\parencite{t3}.
 Now with the PostgreSQL implementation, we miss out on the execution phase dimension.
 
 Whereas not an equivalent substitute, we replace this information with a pipeline-level dimension and keep the operator-level features for the individual operators.
-The pipeline-level block produces additional metadata in a compact manner, e. g., by using averages and sums over operators.
+The pipeline-level block produces additional metadata in a compact manner, e.g., by using averages and sums over operators.
 For instance, we consider planned parallelism, width, and cost estimates per pipeline and not per operator.
 Subsequently, the feature vector stays more compact.
 
@@ -237,8 +257,7 @@ In total, the feature vector is fixed and has 153 dimensions (23 pipeline-level 
 Empty features are zeroed to keep the feature vector dimension.
 
 Regarding the cardinalities, either the actual or the estimated cardinalities are used in the feature vector, depending on which is selected in training.
-However, even if estimates are used, the row names are still called "actual" cardinalities.
-This caveat is a design decision to keep the row names completely uniform.
+
 
 Once the feature vectors for all pipelines are constructed, we get the feature matrix for the whole plan.
 We proceed to train the model in the next section.
@@ -286,15 +305,21 @@ We proceed to train the model in the next section.
 
 Concerning the training, we keep T3's LightGBM decision tree setup~\parencite{t3}.
 Then, we use the newly constructed PostgreSQL-native feature matrix.
-A main training difference is that we train directly on pipeline durations as labels rather than using tuple-based targets.
+A main training difference is that we predict the total query runtime directly,
+rather than predicting individual pipeline durations.
 
 \subsection{Training Targets and Model Configuration}
 
-Concerning the training labels, we use the observed pipeline duration.
-In T3~\parencite{t3}, the training target is the per-tuple-time instead, which is the pipeline duration divided by a pipeline scan cardinality.
-We will compare the per-tuple-time approach with the pipeline duration approach in the REFERENCEABLATIONSTUDY.
+Concerning the training labels, we use the total observed query runtime.
+The model input is formed by summing all per-pipeline feature vectors of a query
+into a single query-level feature vector (see Section~\ref{sec:methodology-implementation}).
+This per-query prediction approach was found to perform best for our PostgreSQL setting,
+as demonstrated in the ablation study (Section~\ref{sec:evaluation_ablation}).
 
-Regarding inference, our predicted query runtime is the sum of the predicted pipeline durations.
+In T3~\parencite{t3}, the training target is the per-tuple execution time for each individual pipeline instead,
+and the predicted pipeline times are summed to obtain the query runtime.
+We evaluate all three granularities -- per-query, per-pipeline, and per-tuple --
+in the ablation study and discuss why per-query works best for our case.
 
 
 Our model uses gradient boosted decision trees as implemented in LightGBM~\parencite{lightgbm}. 
@@ -305,28 +330,61 @@ Furthermore, we use the same training parameters as in the original T3 work~\par
 Hence, the pipeline duration targets $t$ are transformed as $-\log(t)$ to stabilize training.
 Also following T3, we cap the number of boosting rounds at 200 trees to mitigate overfitting.
 
-\subsection{Data Splits and Reproducibility}
+\subsection{Data Splits}
 
-\paragraph{Generalization.}
 We match the training intention of the Zero-Shot benchmark~\parencite{zeroshot} and of T3's cross-instance evaluation~\parencite{t3}.
 Both aim to measure whether the trained model transfers to an unseen database instance.
 Thus, we use a leave-one-out split on the \texttt{parsed\_plan} files:
 We specify one instance as a holdout and use its \texttt{parsed\_plan} files as the test set.
 All other instances form the training data.
-
-Concretely, \texttt{training\_zeroshot\_tpch\_holdout.py} uses the \texttt{-\--holdout} argument to specify the holdout instance (default: \texttt{tpc\_h}).
-Then, we perform a training for all test instances with \texttt{run\_all\_holdouts.py}.
-
-\paragraph{Train and Validation Splits.}
-Mirroring T3's train/validation split, we sample 80\% of the training data for training and 20\% for validation~\parencite{t3}.
+Regarding the training data, we mirror T3's train/validation split.
+We sample 80\% of the training data for training and 20\% for validation~\parencite{t3}.
 The default seed used for shuffling the training data is 42.
 
-\paragraph{Environment.}
-Model training and evaluation for the results reported in this thesis were run on a personal laptop: an Apple MacBook Pro (16-inch, 2021) with the Apple M1 Pro processor (10 CPU cores, 16 GPU cores), 16\,GB memory, and a 512\,GB SSD, under macOS 15.7.3.
 
 \section{Other Performance Prediction Implementations}
 
-Next to already described T3 and Zeroshot...
+We list models apart from T3 and ZeroShot here, which will be mentioned in the evaluation.
+There, we compare our model to other performance prediction implementations.
+
+\paragraph{Learned Cost Models in the Evaluation.}
+
+\textit{FlatVector}~\parencite{flatvector} is an early machine-learning-based approach
+that encodes each query as a flat feature vector of aggregated statistics
+and fits a regression model over it.
+It makes no use of the tree structure of query plans
+and serves primarily as a simple non-neural baseline.
+
+\textit{MSCN}~\parencite{mscn} is a multi-set convolutional network originally proposed for cardinality estimation.
+It encodes tables, joins, and predicates as separate sets of feature vectors
+and applies a small neural network to each set before combining their outputs.
+Also, it can be used as a learned cost model.
+
+\textit{QPPNet}~\parencite{qppnet} is a plan-structured neural network for query performance prediction.
+It assigns a separate neural unit to each operator type in the query plan tree,
+so that each operator's representation is computed from the representations of its child operators.
+Predictions are aggregated bottom-up to produce a single runtime estimate per query.
+
+\textit{E2E}~\parencite{e2e} is an end-to-end learned cost estimator based on tree-structured convolutional networks.
+It encodes the full query plan tree by recursively applying a convolutional layer to parent--child pairs of operators
+and learns to predict query execution time directly from the encoded plan representation.
+
+\textit{NEO}~\parencite{neo} is a learned query optimizer that uses a value network
+to score query plans and guide join ordering.
+Its internal cost model is a tree-convolutional neural network
+that encodes query plans similarly to E2E, and this cost model is what is evaluated in the comparison.
+
+\textit{QueryFormer}~\parencite{queryformer} is a transformer-based cost model
+that encodes query plans as trees using a tree-structured attention mechanism.
+By attending over all operator nodes jointly,
+it can capture long-range dependencies between operators in a plan,
+which is difficult for purely bottom-up tree-convolutional models.
+
+\textit{DACE}~\parencite{dace} is a database-agnostic cost estimator.
+It uses an attention-based neural network to encode query plans
+and is pre-trained across multiple databases.
+Subsequently, it can generalize to unseen database instances
+without re-training.
 
 \paragraph{T3-based Models with Different Feature Vectors.}
 
@@ -334,94 +392,3 @@ Wehrstein et al.~\parencite{jobcomplex} also adapted the Umbra T3 model for Post
 They use a hybrid feature vector that takes the original Umbra feature vector, and maps matching PostgreSQL operators to Umbra operators.
 On top of that, they add additional features that are specific to PostgreSQL, like the Merge Join operator.
 However, they do not use fields that account for PostgreSQL-specific characteristics, like the planned workers or the estimated startup cost fields we use for our model ~\parencite{jobcomplex}.
-
-\section{Section}
-Citation test~\parencite{latex}.
-
-Acronyms must be added in \texttt{main.tex} and are referenced using macros. The first occurrence is automatically replaced with the long version of the acronym, while all subsequent usages use the abbreviation.
-
-E.g. \texttt{\textbackslash ac\{TUM\}, \textbackslash ac\{TUM\}} $\Rightarrow$ \ac{TUM}, \ac{TUM}
-
-For more details, see the documentation of the \texttt{acronym} package\footnote{\url{https://ctan.org/pkg/acronym}}.
-\subsection{Subsection}
-
-See~\autoref{tab:sample}, \autoref{fig:sample-drawing}, \autoref{fig:sample-plot}, \autoref{fig:sample-listing}.
-
-\begin{table}[htpb]
-  \caption[Example table]{An example for a simple table.}\label{tab:sample}
-  \centering
-  \begin{tabular}{l l l l}
-    \toprule
-      A & B & C & D \\
-    \midrule
-      1 & 2 & 1 & 2 \\
-      2 & 3 & 2 & 3 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{figure}[htpb]
-  \centering
-  % This should probably go into a file in figures/
-  \begin{tikzpicture}[node distance=3cm]
-    \node (R0) {$R_1$};
-    \node (R1) [right of=R0] {$R_2$};
-    \node (R2) [below of=R1] {$R_4$};
-    \node (R3) [below of=R0] {$R_3$};
-    \node (R4) [right of=R1] {$R_5$};
-
-    \path[every node]
-      (R0) edge (R1)
-      (R0) edge (R3)
-      (R3) edge (R2)
-      (R2) edge (R1)
-      (R1) edge (R4);
-  \end{tikzpicture}
-  \caption[Example drawing]{An example for a simple drawing.}\label{fig:sample-drawing}
-\end{figure}
-
-\begin{figure}[htpb]
-  \centering
-
-  \pgfplotstableset{col sep=&, row sep=\\}
-  % This should probably go into a file in data/
-  \pgfplotstableread{
-    a & b    \\
-    1 & 1000 \\
-    2 & 1500 \\
-    3 & 1600 \\
-  }\exampleA
-  \pgfplotstableread{
-    a & b    \\
-    1 & 1200 \\
-    2 & 800 \\
-    3 & 1400 \\
-  }\exampleB
-  % This should probably go into a file in figures/
-  \begin{tikzpicture}
-    \begin{axis}[
-        ymin=0,
-        legend style={legend pos=south east},
-        grid,
-        thick,
-        ylabel=Y,
-        xlabel=X
-      ]
-      \addplot table[x=a, y=b]{\exampleA};
-      \addlegendentry{Example A}
-      \addplot table[x=a, y=b]{\exampleB};
-      \addlegendentry{Example B}
-    \end{axis}
-  \end{tikzpicture}
-  \caption[Example plot]{An example for a simple plot.}\label{fig:sample-plot}
-\end{figure}
-
-\begin{figure}[htpb]
-  \centering
-  \begin{tabular}{c}
-  \begin{lstlisting}[language=SQL]
-    SELECT * FROM tbl WHERE tbl.str = "str"
-  \end{lstlisting}
-  \end{tabular}
-  \caption[Example listing]{An example for a source code listing.}\label{fig:sample-listing}
-\end{figure}

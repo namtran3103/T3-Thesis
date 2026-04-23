@@ -16,6 +16,14 @@ Versuchen auch mal weg von pipeline level zu gehen und feature vector auf per qu
 flat vectors vll. oder vectors per query level die tree structure berücksichtigen ohne pipelines zu brauchen 
 
 pg cost estimation field, weg oder vielleicht anderes testen.
+
+PREDICTION SPPED, Aber fühlte sich sehr schnell an
+
+Wie gut sind die Daten, die du hast um die per-pipeline execution times anzugeben? Kannst du die aus den Plänen wirklich genau herauslesen? Stimmt die Summe dieser Daten mit der tatsächlichen Query execution time überein?
+Kommen nested loop joins vor? Wenn ja, nimmst du beide subtrees in die Pipeline mit auf? Hier gibt es ja keinen echten Pipeline breaker. Gibt es dann auf einmal mehr als einen scan pro pipeline?
+Interessante future work könnte auch sein, dem Model zwei feature vectors für die per pipeline prediction zu geben. Einmal nur die features per pipeline und einmal alle query features.
+
+PIPELINE PREDICTION ISSUES lösen
 \section{Section}
 
 
