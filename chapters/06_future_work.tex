@@ -3,117 +3,113 @@
 
 \chapter{Future Work}\label{chapter:future_work}
 
-Data from Zeroshot kann limitierender faktor sein. 
-query distribution vielleicht nicht so gut wie bei t3 umbra, zu wenig categories, auch timewise nicht so stark distributed
-INPUT CARD immer 1 somit impact auf feature berechnung..
-JOB nur 77 von 113 in zeroshot.
+\section{Dedicated Benchmarking and Training Data}
 
+The most significant limitation of this work is the training data.
+We rely entirely on the ZeroShot benchmark data,
+which was designed to enable cost estimation that generalizes to unseen database instances,
+rather than to cover the full spectrum of PostgreSQL query behavior~\parencite{zeroshot}.
 
-Pipeline-level aufbrechen auf operators wie z. B. planned parallelism, etc..., da wir dann bisschen vom pipeline level wegkommen vielleicht per-tuple-target nochmal probieren.
+The ZeroShot training queries follow a narrow pattern of selective table scans,
+equi-joins, and a final aggregation to a single tuple~\parencite{zeroshot}.
+In contrast, T3 generates training data from 16 distinct query structures,
+explicitly including complex selection predicates
+and all combinations of filters, joins, aggregations, and sorts~\parencite{t3}.
+These query types are largely absent from the ZeroShot training data,
+which limits how well our model can generalize to more diverse workloads.
 
-Versuchen auch mal weg von pipeline level zu gehen und feature vector auf per query level zu machen.., u.a., um p90 plus max zu verbessern
+The JOB comparison was restricted to 77 of the 113 benchmark queries,
+because the remaining queries exceed the 30\,s cutoff of the ZeroShot data~\parencite{zeroshot}.
+Rieger and Neumann evaluated T3 on all 113 queries~\parencite{t3},
+making a direct like-for-like comparison on the full JOB benchmark impossible.
 
-flat vectors vll. oder vectors per query level die tree structure berücksichtigen ohne pipelines zu brauchen 
+Conseqeutively, building a dedicated PostgreSQL benchmark in the style of T3's Umbra benchmark
+would close the query diversity gap and restore a full JOB comparison.
 
-pg cost estimation field, weg oder vielleicht anderes testen.
+The runtime distribution of the ZeroShot data is also considerably narrower than T3's Umbra training data~\parencite{t3}.
+A dedicated benchmark covering a wider runtime range would allow the per-tuple prediction approach to be re-evaluated,
+since T3's per-tuple normalization is specifically motivated by such a wide range~\parencite{t3}
+and our ablation study could not test this under comparable conditions (Section~\ref{sec:evaluation_ablation}).
 
-PREDICTION SPPED, Aber fühlte sich sehr schnell an
+A minor data gap is the absence of scan input cardinalities in the \texttt{parsed\_plans}.
+Our implementation always sets this value to 1, and the model compensates via the many other features.
+The estimated row count per table is available in PostgreSQL's system catalog (\texttt{pg\_class.reltuples}~\parencite{postgresql_docs_pg_class}).
+Future wo should extend the data collection to record this information.
 
-Wie gut sind die Daten, die du hast um die per-pipeline execution times anzugeben? Kannst du die aus den Plänen wirklich genau herauslesen? Stimmt die Summe dieser Daten mit der tatsächlichen Query execution time überein?
-Kommen nested loop joins vor? Wenn ja, nimmst du beide subtrees in die Pipeline mit auf? Hier gibt es ja keinen echten Pipeline breaker. Gibt es dann auf einmal mehr als einen scan pro pipeline?
-Interessante future work könnte auch sein, dem Model zwei feature vectors für die per pipeline prediction zu geben. Einmal nur die features per pipeline und einmal alle query features.
+\section{Feature Vector Extensions}
 
-PIPELINE PREDICTION ISSUES lösen
-\section{Section}
+\paragraph{Finer-grained pipeline features.}
+Currently, the pipeline-level block of our feature vector aggregates features across all nodes in a pipeline.
+For example, \texttt{workers\_planned} is summed over the pipeline.
+A natural extension is to expand the pipeline block with per-node entries,
+at the cost of a larger feature vector.
+This would let the model distinguish, for example, a pipeline where only one node is parallelized
+from one where all nodes run in parallel.
 
+\paragraph{Purely query-level feature vector.}
+Per-query prediction outperforms per-pipeline and per-tuple prediction in our setting.
+Thererefore, a future direction is to design the feature vector directly at the query level,
+without the intermediate pipeline decomposition.
+This would further sidestep the PostgreSQL pipeline timing problem identified in the ablation study
+(Section~\ref{sec:evaluation_ablation}), while also simplifying the model pipeline.
 
+\paragraph{Joint pipeline and query context for pipeline-level prediction.}
+For the per-pipeline prediction approach, a possible extension is to provide
+two feature vectors per pipeline: one capturing only the local pipeline features,
+and one summarizing the full query context.
+This gives the model information about how a pipeline relates to the rest of the query,
+which may improve per-pipeline runtime prediction.
 
-Citation test~\parencite{latex}.
+\paragraph{Impact of PostgreSQL cost estimates.}
+We include PostgreSQL planner cost estimates (\texttt{est\_cost}, \texttt{est\_startup\_cost})
+as features.
+However, the ablation study confirms that the PostgreSQL cost estimator is highly inaccurate
+for complex queries (median Q-Error above 1000, see Table~\ref{tab:median_qerror_job}).
+A targeted ablation study that removes or replaces these planner-cost features
+could determine whether they help or hurt prediction accuracy.
 
-Acronyms must be added in \texttt{main.tex} and are referenced using macros. The first occurrence is automatically replaced with the long version of the acronym, while all subsequent usages use the abbreviation.
+\paragraph{Mitigating the pipeline timing issue.}
+The pipeline timing problem identified in the ablation study arises because
+PostgreSQL's iterator model causes per-node timings to overlap across pipeline boundaries.
+Future work could investigate this issue and provide mitigation approaches.
+Subsequently, this could provide more accurate per-pipeline labels and could make the per-pipeline and per-tuple
+prediction variants more accurate.
 
-E.g. \texttt{\textbackslash ac\{TUM\}, \textbackslash ac\{TUM\}} $\Rightarrow$ \ac{TUM}, \ac{TUM}
+\section{Prediction Latency}
 
-For more details, see the documentation of the \texttt{acronym} package\footnote{\url{https://ctan.org/pkg/acronym}}.
-\subsection{Subsection}
+Since both our model and T3 use LightGBM gradient-boosted decision trees,
+prediction should be fast in practice.
+Rieger and Neumann note that T3's low prediction latency is a key practical advantage~\parencite{t3}.
+Future work should benchmark the prediction latency of our PostgreSQL model
+to confirm its performance,
+and to compare it directly against T3's reported latency~\parencite{t3}.
 
-See~\autoref{tab:sample}, \autoref{fig:sample-drawing}, \autoref{fig:sample-plot}, \autoref{fig:sample-listing}.
-
-\begin{table}[htpb]
-  \caption[Example table]{An example for a simple table.}\label{tab:sample}
-  \centering
-  \begin{tabular}{l l l l}
-    \toprule
-      A & B & C & D \\
-    \midrule
-      1 & 2 & 1 & 2 \\
-      2 & 3 & 2 & 3 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{figure}[htpb]
-  \centering
-  % This should probably go into a file in figures/
-  \begin{tikzpicture}[node distance=3cm]
-    \node (R0) {$R_1$};
-    \node (R1) [right of=R0] {$R_2$};
-    \node (R2) [below of=R1] {$R_4$};
-    \node (R3) [below of=R0] {$R_3$};
-    \node (R4) [right of=R1] {$R_5$};
-
-    \path[every node]
-      (R0) edge (R1)
-      (R0) edge (R3)
-      (R3) edge (R2)
-      (R2) edge (R1)
-      (R1) edge (R4);
-  \end{tikzpicture}
-  \caption[Example drawing]{An example for a simple drawing.}\label{fig:sample-drawing}
-\end{figure}
-
-\begin{figure}[htpb]
-  \centering
-
-  \pgfplotstableset{col sep=&, row sep=\\}
-  % This should probably go into a file in data/
-  \pgfplotstableread{
-    a & b    \\
-    1 & 1000 \\
-    2 & 1500 \\
-    3 & 1600 \\
-  }\exampleA
-  \pgfplotstableread{
-    a & b    \\
-    1 & 1200 \\
-    2 & 800 \\
-    3 & 1400 \\
-  }\exampleB
-  % This should probably go into a file in figures/
-  \begin{tikzpicture}
-    \begin{axis}[
-        ymin=0,
-        legend style={legend pos=south east},
-        grid,
-        thick,
-        ylabel=Y,
-        xlabel=X
-      ]
-      \addplot table[x=a, y=b]{\exampleA};
-      \addlegendentry{Example A}
-      \addplot table[x=a, y=b]{\exampleB};
-      \addlegendentry{Example B}
-    \end{axis}
-  \end{tikzpicture}
-  \caption[Example plot]{An example for a simple plot.}\label{fig:sample-plot}
-\end{figure}
-
-\begin{figure}[htpb]
-  \centering
-  \begin{tabular}{c}
-  \begin{lstlisting}[language=SQL]
-    SELECT * FROM tbl WHERE tbl.str = "str"
-  \end{lstlisting}
-  \end{tabular}
-  \caption[Example listing]{An example for a source code listing.}\label{fig:sample-listing}
-\end{figure}
+% ---- ORIGINAL NOTES (for review) ----
+%
+% -Dedicated Benchmarking with Queries from T3 paper for PG, we had time limitations:
+%
+% Why?
+%
+% Data from Zeroshot kann limitierender faktor sein.
+% query distribution vielleicht nicht so gut wie bei t3 umbra, zu wenig categories, auch timewise nicht so stark distributed -- check und vergleiche genau, inwieweit daten überlegen sind.
+% INPUT CARD existiert für scans nicht in zeroshot data, dadruch immer auf 1 gelegt.
+%
+% JOB nur 77 von 113 queries in zeroshot, comparison eingeschränkt.
+%
+%
+% - Änderungen am Feature Vector:
+%
+%
+% Pipeline-level block aufbrechen, und grössere feature size in kauf nehmen. z.b. planned parallelism per node, etc...
+%
+% Weil query-level am besten funktioniert hat: Versuchen auch mal weg von pipeline level zu gehen und feature vector auf per query level zu machen
+%
+% -> dadurch könnte man weiterhin PG Problem umgehen, dass pipeline prediction targets aufgrund der timing issues (siehe eval) nicht präzise genug ist.
+% Oder man kann sich natürlich anschauen, wie man dieses pipeline time issue mitigaten kann.
+%
+% Interessante future work könnte auch sein, dem Model zwei feature vectors für die per pipeline prediction zu geben. Einmal nur die features per pipeline und einmal alle query features.
+%
+% Impact der inkludierten pg Cost estimation im vektor untersuchen, haben in eval gesehen, dass der PG cost estimator noch viele Schwierigkeiten hat
+%
+%
+% - Untersuche Prediction Speed/latency, dadurch, dass wir LightGBM trees benutzt haben, sollte es wie in Umbra T3, schnell sein
