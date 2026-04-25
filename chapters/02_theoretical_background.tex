@@ -36,7 +36,7 @@ When a DBMS receives an SQL query, it processes the query in three successive ph
 The query plan is central to performance, since the optimizer's choice of operators and their ordering directly determines how much work the DBMS has to perform.
 Different DBMSs implement these phases differently, and especially the execution step varies widely.
 \emph{PostgreSQL}, for instance, executes plans using an iterator-based model described below.
-\emph{Umbra}, by contrast, compiles query plans into native machine code at runtime.
+\emph{Umbra}, by contrast, compiles query plans into native machine code at runtime~\parencite{umbra2020}.
 These architectural choices have a large impact on query execution time~\parencite{neumann2011}.
 
 \subsection{Iterator-Based Execution (PostgreSQL)}
@@ -73,14 +73,14 @@ This is one reason why more recent systems like Umbra take a different approach,
 \subsection{Compiled Query Execution (Umbra)}
 
 Umbra is a relational DBMS developed at the Technical University of Munich that is designed for high performance on modern hardware~\parencite{umbra2020}.
-Unlike PG's interpreter-based approach, Umbra takes a fundamentally different execution strategy: it compiles each query plan into native machine code at query time~\parencite{umbra2020, neumann2011}.
+Unlike PG's interpreter-based approach, Umbra takes a fundamentally different execution strategy: it compiles each query plan into native machine code at query time~\parencite{umbra2020}.
 
 The motivation for this is to eliminate the per-tuple overhead of the iterator model.
 Recall that in PG's pull-based execution, every single tuple causes a chain of \texttt{next()} calls to travel through the operator tree.
 This introduces substantial function call overhead and makes it difficult for the CPU to predict branches and keep data in cache.
 In a compiled system, these operator boundaries dissolve.
 Instead of calling functions for each tuple, Umbra generates a single piece of native machine code that fuses the logic of multiple operators into tight loops.
-Data is \emph{pushed} forward through the code rather than pulled upward through function calls.
+Data is \emph{pushed} forward through the code rather than pulled upward through function calls~\parencite{neumann2011}.
 
 Concretely, the compilation model works as follows~\parencite{neumann2011}.
 Each operator participates in a \texttt{produce}/\texttt{consume} interface, which is a code-generation protocol invoked once at query compile time.
@@ -98,9 +98,11 @@ These materialization boundaries between fragments are the concept of \emph{pipe
 At runtime, only the generated code runs.
 The scan drives execution by iterating over tuples, and each tuple is processed through the entire pipeline inline.
 This is the push-based contrast with PostgreSQL: in PG, the top-most operator drives execution by issuing \texttt{next()} calls all the way down the tree for every single tuple at runtime.
-In Umbra, those operator boundaries are compiled away.
-The generated code is handed to the LLVM compiler framework~\parencite{neumann2011}, which produces native machine code in typically a few milliseconds.
-This overhead is amortized for non-trivial queries.
+
+Furthermore, instead of always compiling, Umbra employs an \emph{adaptive compilation strategy}~\parencite{umbra2020}.
+Each pipeline step is first interpreted via an efficient bytecode virtual machine, avoiding compilation overhead entirely for cheap or short-running steps.
+For steps where compilation is beneficial, Umbra translates its custom intermediate representation (IR) into LLVM IR~\parencite{umbra2020}.
+LLVM (Low Level Virtual Machine) is a general-purpose compiler framework that then produces highly optimized native machine code~\parencite{neumann2011}.
 
 As a concrete consequence for this thesis: \emph{T3}, the performance prediction model this work builds on, was originally designed for Umbra and therefore relies on Umbra's query plans and their structure~\parencite{t3}.
 The key structural concept that Umbra's compilation naturally exposes is the notion of \emph{pipelines}, which is described next.
@@ -129,7 +131,6 @@ Therefore, a single pipeline can contain multiple consecutive join probe stages.
 
 Thus, a query plan decomposes into a directed acyclic graph (DAG) of pipelines.
 Each pipeline starts either at a base table scan or by reading the materialized output of a prior pipeline breaker, processes tuples in a streaming fashion, and ends either at the next pipeline breaker or at the final output.
-
 
 \section{Database Performance Prediction}
 
