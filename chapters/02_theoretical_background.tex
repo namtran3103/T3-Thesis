@@ -3,7 +3,7 @@
 
 \chapter{Theoretical Background}\label{chapter:theoretical_background}
 
-\section{Databases and Query Execution}
+\section{Databases and Query Execution}\label{sec:databases_and_query_execution}
 
 A \emph{database management system} (DBMS) is software that stores, organizes, and retrieves structured data.
 Users interact with such systems primarily through \emph{Structured Query Language} (SQL), 
@@ -20,9 +20,9 @@ When a DBMS receives an SQL query, it processes the query in three successive ph
 
   \item \textbf{Optimization.}
   The \emph{optimizer} takes the relational-algebra expression and uses statistical summaries of the stored data to evaluate many possible \emph{execution plans}.
-  A plan is a tree of physical \emph{operators} — such as table scans, joins, sorts, and aggregations — along with instructions for how each operator should be executed (e.g., whether to use an index).
+  A plan is a tree of physical \emph{operators} — such as table scans, joins, sorts, and aggregations — along with instructions for how each operator should be executed (e.g., whether to use hash tables or nested loops).
 
-  A key input to the optimizer is the \emph{cardinality} of each operator: the number of rows (tuples) it is expected to produce or consume.
+  One key input to the optimizer is the \emph{cardinality} of each operator: the number of rows (tuples) it is expected to produce or consume.
   Since the query has not yet been executed, the optimizer relies on \emph{estimated cardinalities}, derived from table sizes and column value distributions.
   These estimates directly influence which plan the optimizer considers cheapest and therefore selects.
 
@@ -31,6 +31,7 @@ When a DBMS receives an SQL query, it processes the query in three successive ph
 
   \item \textbf{Evaluation.}
   The query-execution engine runs the chosen execution plan against the stored data and produces the query result.
+  Most DBMSs provide dedicated commands to extract and inspect the chosen execution plan.
 \end{enumerate}
 
 The query plan is central to performance, since the optimizer's choice of operators and their ordering directly determines how much work the DBMS has to perform.
@@ -117,12 +118,12 @@ Within a pipeline, each tuple produced by the scan at the bottom flows immediate
 Moreover, a \emph{pipeline breaker} is an operator that interrupts this streaming flow, because it must see \emph{all} of its input before it can produce any output.
 The following are typical examples of pipeline breakers~\parencite{t3}:
 
-\begin{itemize}
+\begin{enumerate}
   \item \textbf{Sort.} A sort operator cannot emit a single sorted tuple until it has collected and sorted all input tuples.
   \item \textbf{Aggregation.} A group-by operator must accumulate all input tuples into groups before it can emit any aggregated result.
   \item \textbf{Hash join (build side).} The build side of a hash join must be fully read into a hash table before any tuple from the probe side can be matched.
     The build side therefore forms its own pipeline, terminating at the hash table.
-\end{itemize}
+\end{enumerate}
 
 Not every operator is a pipeline breaker.
 A filter or a projection passes each tuple through without any materialization.
@@ -131,145 +132,214 @@ Therefore, a single pipeline can contain multiple consecutive join probe stages.
 
 Thus, a query plan decomposes into a directed acyclic graph (DAG) of pipelines.
 Each pipeline starts either at a base table scan or by reading the materialized output of a prior pipeline breaker, processes tuples in a streaming fashion, and ends either at the next pipeline breaker or at the final output.
-
-\section{Database Performance Prediction}
+The left side of Figure~\ref{fig:t3_process} illustrates such a pipeline decomposition.
+\section{Benchmarking and Evaluation Metrics}
 
 \subsection{Benchmarking}
 
+Section \ref{sec:databases_and_query_execution} described how a DBMS processes SQL queries and produces query plans.
+To evaluate how well a performance prediction model estimates the execution time of such plans, its predictions must be compared against real, measured runtimes.
+Benchmarking provides a standardized framework for this.
 
-sowas auch schreiben wie ssb, tpch, etc.
+A benchmark consists of two components: a \emph{database instance} — a schema with populated data — and a \emph{workload} of representative SQL queries~\parencite{silberschatz2019}.
+Each query in the workload is executed on the target DBMS and its wall-clock runtime is recorded.
+Since execution time depends directly on the underlying hardware — CPU speed, available memory, and storage throughput — benchmark results are always specific to the machine they were obtained on.
+Absolute runtimes from different machines are therefore not directly comparable.
+The goal of a benchmark is instead to provide a fixed, reproducible environment in which different models or systems can be evaluated under identical conditions~\parencite{silberschatz2019}.
+
+\paragraph{Join Order Benchmark (JOB).}
+An example of a benchmark is the \textit{Join Order Benchmark (JOB)}, also called JOB-full. We will use it as an evaluation benchmark in this thesis.
+JOB uses the real-world \textit{IMDB (Internet Movie Database)} dataset and contains 113 complex queries, some involving up to 17 joins.
+Unlike synthetic benchmarks (those using artificially generated data), the IMDB dataset contains naturally occurring correlations and skewed value distributions.
+Therefore, it is a challenging and realistic workload and JOB is widely used in query performance prediction research~\parencite{leis2018job}.
 
 \subsection{Error Metrics}
-q-error und percentile.
 
-\subsection{Traditional Cost Models and Learned Approaches}
+Evaluating a performance prediction model requires a metric that captures how far predicted runtimes deviate from actual ones.
+Two aspects matter: the \emph{accuracy} on individual predictions and the \emph{distribution} of errors across the full workload.
 
-\subsection{Neural Networks and Decision Trees}
+\paragraph{Q-Error.}
+A common metric for cardinality estimation is the \emph{Q-Error}, defined as~\parencite{qerror}:
+\[
+  \text{Q-Error}(\hat{t},\, t) = \max\!\left(\frac{\hat{t}}{t},\, \frac{t}{\hat{t}}\right),
+\]
+where $\hat{t}$ is the predicted value and $t$ is the true value.
+A Q-Error of~1 is a perfect prediction.
+Furthermore, if a query takes 1\,s but the model predicts 3\,s, the Q-Error is~3; the same Q-Error results if the model predicts 0.33\,s instead.
+Hence, over- and underestimates of the same factor are penalized equally, regardless of the absolute runtime magnitude.
+T3 uses Q-Error to evaluate runtime predictions~\parencite{t3}, and we follow the same approach in this thesis.
 
-\subsection{T3: Tuple Time Tree}
+\paragraph{Summarizing the Error Distribution.}
+A single Q-Error value describes the accuracy on one query.
+To characterize a model's behavior across a whole workload, we use three summary statistics:
+First, the \emph{median} (p50) gives the typical error: half of all queries are predicted within this factor.
+Second, the \emph{90th percentile} (p90) describes tail behavior: 90\% of queries fall at or below this Q-Error.
+Finally, the \emph{average} Q-Error reflects the mean multiplicative error across all queries, but is more sensitive to a small number of large outliers than the percentile values.
 
-This decomposition is fundamental to T3's performance prediction approach~\parencite{t3}.
-Rather than predicting the runtime of a whole query in a single step, T3 predicts the runtime of each pipeline individually and sums the per-pipeline predictions to obtain the total query runtime.
-Intuitively, each pipeline represents a distinct computational unit with its own characteristic workload — its scan cardinality, the operators it contains, and the fraction of tuples that reach each operator.
-Predicting per-pipeline is therefore simpler and more accurate than predicting for the whole query at once.
-The pipelines and their structure are also the basis for the feature vectors used by T3, as discussed in the Methodology chapter.
+Consequently, these three statistics provide a comprehensive picture of a model's prediction quality across the benchmark workload.
+
+\section{Performance Prediction Models}
+
+\subsection{Traditional Cost Models vs.\ Learned Approaches}
+
+A \emph{cost model} is what the query optimizer uses to compare candidate execution plans and select the one it expects to be cheapest~\parencite{silberschatz2019}.
+It assigns a cost estimate to each plan based on operator types, estimated cardinalities, and table statistics such as column histograms.
+Subsequently, models that predict actual query execution time are also referred to as \emph{performance prediction models} or \emph{learned cost models}~\parencite{t3, zeroshot}.
+
+Traditional cost models consist of hand-crafted mathematical formulas that are built into the DBMS optimizer.
+PostgreSQL's built-in estimator is a representative example: it computes cost scores from table sizes, index properties, and planner statistics without ever observing real execution times~\parencite{postgresql_docs_planner_stats}.
+These formulas rely heavily on cardinality estimates — and as described in Section~\ref{sec:databases_and_query_execution}, those estimates can be orders of magnitude off.
+Since cost estimates are derived from cardinality estimates, such errors propagate directly into the cost model and can cause the optimizer to select suboptimal plans~\parencite{leis2018job}.
+
+This limitation motivated \emph{learned approaches}: rather than hand-crafted formulas, a model is trained on historical query executions to learn the mapping from plan features to runtime directly from data~\parencite{zeroshot}.
+Learned models can capture complex, hardware-specific execution patterns that are difficult to express analytically.
+The following two subsections introduce the two main families of learned models relevant to this thesis: neural networks and decision trees.
+
+\subsection{Neural Networks}
+
+Neural networks are a class of machine learning models that learn to approximate functions from data by composing multiple layers of parameterized transformations~\parencite{deeplearning}.
+At each layer, the network takes a \emph{vector} — a fixed-length array of numbers — as input, multiplies it by a learned weight matrix, adds a bias, and applies a nonlinear activation function to produce a new vector.
+This new vector is then passed to the next layer as its input.
+By stacking many such layers, the network learns increasingly abstract \emph{representations} of the input: intermediate vectors that capture relevant patterns for the prediction task~\parencite{deeplearning}.
+The final layer produces the network's output — in the case of performance prediction, a single predicted runtime value.
+They are valued for their flexibility: given sufficient training data, they can capture highly nonlinear relationships between inputs and outputs.
+Hence, they are attractive for query performance prediction, where the relationship between a plan's structure and its execution time is complex and hardware-specific~\parencite{t3}.
+
+\paragraph{Neural Network Architectures for Query Plans.}
+A query plan is a tree, and encoding a variable-depth tree into a fixed-size vector directly loses structural information.
+Three families of neural architectures have been used to address this.
+
+\emph{Tree-structured networks} process a query plan bottom-up: each operator's representation is computed from its own features and those of its children, recursively from the leaves to the root.
+The key idea is \emph{convolution} — the same learned transformation is applied at every operator node regardless of its position, so the model generalizes to plan trees of different shapes and sizes~\parencite{deeplearning, e2e, qppnet}.
+
+\emph{Attention-based models} allow each operator's representation vector to be updated based on the representation vectors of all other operators in the plan simultaneously, capturing dependencies between operators that are far apart in the tree~\parencite{queryformer}.
+
+\emph{Graph neural networks} represent the full query context — operators, tables, columns, and predicates — as a graph and propagate information through it~\parencite{zeroshot}.
+
+\paragraph{Accuracy vs.\ Prediction Latency.}
+Neural network models can achieve high prediction accuracy.
+However, they come at the cost of high inference latency.
+Since a query must wait for its prediction before being scheduled, this latency adds directly to every query's execution time — a particular problem for short-running queries~\parencite{t3}.
+
+\paragraph{ZeroShot.}
+ZeroShot~\parencite{zeroshot} is a neural cost model that addresses a key limitation of workload-driven approaches: such models must be retrained from scratch for every new database, requiring costly collection of training queries.
+ZeroShot instead trains a single model across a variety of databases and then transfers it to unseen ones without any retraining~\parencite{zeroshot}.
+
+The key enabler is a \emph{transferable query representation}: the query plan is encoded as a graph where all node features are chosen to be meaningful across databases — using predicate structure and data types rather than database-specific literals or column names~\parencite{zeroshot}.
+Representations are propagated bottom-up through the plan graph, and the resulting encoding of the root node is passed to a final network that predicts the runtime~\parencite{zeroshot}.
+
+This thesis uses the training data published alongside ZeroShot as its training data source.
+
+\subsection{Decision Trees}
+
+A \emph{decision tree} is a model structured as a tree where each internal node tests a condition on one feature of the input vector and routes the input to a child branch based on the outcome~\parencite{cart}.
+Traversal starts at the root and continues until a leaf is reached, which holds the prediction value.
+For example, a node might check whether the estimated output cardinality of a pipeline exceeds a threshold and branch accordingly.
+Since inference only requires evaluating simple conditions and following branches, it is extremely fast.
+
+A single decision tree has limited expressiveness: the number of distinct predictions it can produce is bounded by the number of leaves~\parencite{cart}.
+\emph{Gradient boosting} addresses this by building an ensemble of trees sequentially~\parencite{gradientboosting}.
+Each new tree is trained to predict the residual error left by all previous trees.
+Hence, the ensemble progressively reduces the prediction error, and the final prediction is the sum of all trees' outputs~\parencite{gradientboosting}.
+
+\emph{LightGBM} is a highly efficient gradient boosting framework that implements this ensemble method with optimizations for speed and memory usage~\parencite{lightgbm}.
+It is the framework used by T3~\parencite{t3}.
+
+\paragraph{Advantages and Disadvantages.}
+The key advantage of gradient boosted decision trees is \emph{inference speed}: traversing a tree requires only simple comparisons, with no matrix multiplications.
+This makes them orders of magnitude faster than neural networks at inference time — T3's compiled model achieves around 4\,\textmu{}s per prediction~\parencite{t3}.
+
+A well-known disadvantage is \emph{overfitting}.
+A single deep decision tree will memorize the training data rather than learning generalizable patterns~\parencite{cart}.
+Gradient boosting partially mitigates this through two mechanisms~\parencite{gradientboosting}.
+First, the total number of trees is capped: adding more trees eventually starts fitting noise in the training data rather than learning generalizable patterns, so training is stopped early.
+Second, each tree's contribution to the final prediction is scaled by a small factor (called \emph{shrinkage} or the \emph{learning rate}) — for example, 0.1 — so no single tree can push the prediction too far.
+Together, these controls reduce the risk that the ensemble memorizes the training data~\parencite{gradientboosting}.
+
+Moreover, another limitation is that decision trees require a \emph{flat feature vector} as input and cannot natively handle tree-structured data like query plans~\parencite{t3}.
+Additionally, because possible prediction values are bounded by the number of leaves, a single decision tree struggles to predict accurately over a very wide range of target values~\parencite{t3}.
+Both of these limitations must be addressed through careful design, which T3 applies as described in the next subsection.
+
+
+
+\subsection{T3}\label{subsec:t3}
+
+T3 (Tuple Time Tree) is a compiled decision tree model for query performance prediction that directly addresses both limitations described above~\parencite{t3}.
+It is designed specifically for Umbra~\parencite{t3} and serves as the base of this thesis.
+T3 achieves state-of-the-art accuracy while operating at around 4\,\textmu{}s inference latency -- roughly four orders of magnitude faster than neural network models such as ZeroShot~\parencite{t3}.
+This combination is achieved through three main ideas: a \emph{pipeline-based query plan representation}, \emph{tuple-centric prediction targets}, and \emph{model compilation to native machine code}~\parencite{t3}.
+
+Figure~\ref{fig:t3_process} shows a concrete example: a query plan is decomposed into six pipelines (P0--P5), each converted to its own feature vector.
+The model then predicts a runtime for each pipeline independently.
+Summing the six predictions yields the total predicted query time of 38\,ms.
+
+\begin{figure}[htpb]
+  \centering
+  \includegraphics[width=0.75\textwidth]{figures/t3.png}
+  \caption[T3 prediction process]{T3 prediction process for the TPC-H benchmark, query Q5. The query plan is decomposed into pipelines (P0--P5). Each pipeline is encoded as a flat feature vector. The decision tree predicts an execution time per pipeline. The sum of all pipeline times is the predicted query runtime. Figure from Rieger and Neumann~\parencite{t3}.}
+  \label{fig:t3_process}
+\end{figure}
+
+\paragraph{Pipeline-Based Representation.}
+T3 exploits the pipeline structure of Umbra's compiled execution model introduced in Section~\ref{sec:databases_and_query_execution}.
+Because Umbra already partitions query execution at pipeline breakers, each pipeline is a self-contained unit with a well-defined input cardinality, a fixed operator sequence, and a clear output.
+
+Therefore, T3 encodes each pipeline as a separate flat feature vector and predicts its execution time individually.
+The predicted query runtime is the sum of all pipeline times~\parencite{t3}.
+This decomposition simplifies the prediction problem: instead of capturing the combined behavior of all operators at once, the model focuses on the specific characteristics of each pipeline~\parencite{t3}.
+
+\paragraph{Feature Vectors.}
+Different operators do fundamentally different work.
+For example, a hash join first \emph{builds} a hash table from its left input and then \emph{probes} that table with tuples from its right input.
+By contrast, a filter simply lets tuples pass through.
+T3 captures this by assigning each operator a \emph{stage} that describes what it does with tuples~\parencite{t3}:
+\begin{enumerate}
+  \item \textbf{Build.} Tuples arrive and are materialized (e.g., hash table construction).
+  \item \textbf{Probe.} Tuples are looked up against a materialized structure.
+  \item \textbf{Scan.} An operator reads tuples from storage or a previous result.
+  \item \textbf{Pass-through.} Tuples traverse the operator without materialization (e.g., a filter).
+\end{enumerate}
+Furthermore, T3 distinguishes which \emph{tuple stream} is involved: the primary input (\textit{in}), the secondary input for binary operators such as joins (\textit{right}), or the output (\textit{out})~\parencite{t3}.
+
+For each stage and stream combination, T3 records up to three numerical features~\parencite{t3}:
+\begin{enumerate}
+  \item \textbf{Percentage.} The fraction of all tuples at the pipeline start that reach this point.
+  \item \textbf{Size.} The size of a single tuple in bytes, used for materializing operators.
+  T3 derives this from Umbra's \emph{IU} (information unit) list. It is a per-operator record of output attribute names, types, and byte widths.
+  Subsequently, T3 requires database schema information.
+  \item \textbf{Cardinality.} The number of tuples in the stream, used for operators with nonlinear cost such as sorts or hash joins.
+\end{enumerate}
+The percentage feature is the most important one.
+An operator that only 1\% of tuples reach contributes almost nothing to runtime, regardless of how expensive it would be at full volume~\parencite{t3}.
+Additionally, T3 records the count of each operator-stage combination that appears in the pipeline.
+This lets the model handle pipelines where the same operator type occurs more than once~\parencite{t3}.
+
+Together, these features give a compact description of each pipeline's load.
+
+\paragraph{Tuple-Centric Prediction Targets.}
+T3's training data spans a runtime distribution from $10^{-15}$\,s to $1$\,s per tuple -- a range of fifteen orders of magnitude~\parencite{t3}.
+However, a decision tree can output only as many distinct values as it has leaves.
+Hence, directly predicting pipeline execution times over such a wide range comes with a loss of precision ~\parencite{t3}.
+
+Instead, T3 addresses this by predicting the expected time to process a \emph{single tuple} through the pipeline.
+This fits naturally with Umbra's push-based model where tuples flow through the pipeline one by one.
+Then, the full pipeline time is recovered by multiplying this per-tuple value by the number of tuples scanned at the pipeline's start~\parencite{t3}.
+This normalization compresses the prediction target range and improves accuracy.
+
+Additionally, the per-tuple times are log-transformed during training ($t' = -\log(t)$), so relative deviations are penalized equally for short and long queries~\parencite{t3}.
+
+\paragraph{Training, Compilation, and Generalization.}
+T3 generates its own training data by running 16 distinct query structures on Umbra across multiple database instances and recording the resulting pipeline execution times~\parencite{t3}.
+It then trains a LightGBM ensemble of 200 gradient boosted trees on these records using the MAPE (Mean Absolute Percentage Error) objective.
+MAPE minimizes the average relative error across predictions rather than the absolute error.
+Subsequently, short and long pipelines contribute equally to training~\parencite{t3}.
+Following the zero-shot paradigm~\parencite{zeroshot}, T3 trains on all but one database instance and generalizes to the held-out one without any retraining~\parencite{t3}.
+
+After training, the model is compiled to native machine code via the \texttt{lleaves} framework, which converts each decision node to exactly one compare instruction and one branch instruction~\parencite{t3}.
+This compilation step is performed only once after training and reduces inference latency from 22\,\textmu{}s to approximately 4\,\textmu{}s.
+Hence, T3 is an extremely fast performance prediction model~\parencite{t3}.
 
 \section{Related Work}
 
-\section{--------------------------------}
-
-\section{Database Basics}
-
-operator type, estimated/actual cardinalities, widths, and runtimes
-
-\section{Performance Prediction}
-
-draft: beschreiben, was performance prediction ist, was die ziele sind, etc.
-benchmarking, etc.
-Cost Model beschreiben
-
-\section{Benchmarking}
-timed queries, etc.
 
 
-\section{Cost Models}
-
-\section{Decision Trees}
-
-\section{PostgreSQL}
-
-\section{Umbra}
-
-\section{T3}
-
-
-\section{Section}
-Citation test~\parencite{latex}.
-
-Acronyms must be added in \texttt{main.tex} and are referenced using macros. The first occurrence is automatically replaced with the long version of the acronym, while all subsequent usages use the abbreviation.
-
-E.g. \texttt{\textbackslash ac\{TUM\}, \textbackslash ac\{TUM\}} $\Rightarrow$ \ac{TUM}, \ac{TUM}
-
-For more details, see the documentation of the \texttt{acronym} package\footnote{\url{https://ctan.org/pkg/acronym}}.
-\subsection{Subsection}
-
-See~\autoref{tab:sample}, \autoref{fig:sample-drawing}, \autoref{fig:sample-plot}, \autoref{fig:sample-listing}.
-
-\begin{table}[htpb]
-  \caption[Example table]{An example for a simple table.}\label{tab:sample}
-  \centering
-  \begin{tabular}{l l l l}
-    \toprule
-      A & B & C & D \\
-    \midrule
-      1 & 2 & 1 & 2 \\
-      2 & 3 & 2 & 3 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{figure}[htpb]
-  \centering
-  % This should probably go into a file in figures/
-  \begin{tikzpicture}[node distance=3cm]
-    \node (R0) {$R_1$};
-    \node (R1) [right of=R0] {$R_2$};
-    \node (R2) [below of=R1] {$R_4$};
-    \node (R3) [below of=R0] {$R_3$};
-    \node (R4) [right of=R1] {$R_5$};
-
-    \path[every node]
-      (R0) edge (R1)
-      (R0) edge (R3)
-      (R3) edge (R2)
-      (R2) edge (R1)
-      (R1) edge (R4);
-  \end{tikzpicture}
-  \caption[Example drawing]{An example for a simple drawing.}\label{fig:sample-drawing}
-\end{figure}
-
-\begin{figure}[htpb]
-  \centering
-
-  \pgfplotstableset{col sep=&, row sep=\\}
-  % This should probably go into a file in data/
-  \pgfplotstableread{
-    a & b    \\
-    1 & 1000 \\
-    2 & 1500 \\
-    3 & 1600 \\
-  }\exampleA
-  \pgfplotstableread{
-    a & b    \\
-    1 & 1200 \\
-    2 & 800 \\
-    3 & 1400 \\
-  }\exampleB
-  % This should probably go into a file in figures/
-  \begin{tikzpicture}
-    \begin{axis}[
-        ymin=0,
-        legend style={legend pos=south east},
-        grid,
-        thick,
-        ylabel=Y,
-        xlabel=X
-      ]
-      \addplot table[x=a, y=b]{\exampleA};
-      \addlegendentry{Example A}
-      \addplot table[x=a, y=b]{\exampleB};
-      \addlegendentry{Example B}
-    \end{axis}
-  \end{tikzpicture}
-  \caption[Example plot]{An example for a simple plot.}\label{fig:sample-plot}
-\end{figure}
-
-\begin{figure}[htpb]
-  \centering
-  \begin{tabular}{c}
-  \begin{lstlisting}[language=SQL]
-    SELECT * FROM tbl WHERE tbl.str = "str"
-  \end{lstlisting}
-  \end{tabular}
-  \caption[Example listing]{An example for a source code listing.}\label{fig:sample-listing}
-\end{figure}

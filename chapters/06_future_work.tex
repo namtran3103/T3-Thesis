@@ -31,7 +31,7 @@ A dedicated benchmark covering a wider runtime range would allow the per-tuple p
 since T3's per-tuple normalization is specifically motivated by such a wide range~\parencite{t3}
 and our ablation study could not test this under comparable conditions (Section~\ref{sec:evaluation_ablation}).
 
-A minor data gap is the absence of scan input cardinalities in the \texttt{parsed\_plans}.
+Moreover, a data gap is the absence of tablescan input cardinalities in the \texttt{parsed\_plans}.
 Our implementation always sets this value to 1, and the model compensates via the many other features.
 The estimated row count per table is available in PostgreSQL's system catalog (\texttt{pg\_class.reltuples}~\parencite{postgresql_docs_pg_class}).
 Future wo should extend the data collection to record this information.
@@ -83,8 +83,10 @@ Rieger and Neumann note that T3's low prediction latency is a key practical adva
 Future work should benchmark the prediction latency of our PostgreSQL model
 to confirm its performance,
 and to compare it directly against T3's reported latency~\parencite{t3}.
+A concrete step toward this would be to compile the trained LightGBM model to native machine code using the \texttt{lleaves} framework, as T3 does~\parencite{t3}.
+T3 already demonstrates that this compilation step reduces inference latency from 22\,\textmu{}s to approximately 4\,\textmu{}s, and our model could benefit from the same approach.
 
-% ---- ORIGINAL NOTES (for review) ----
+% --- ORIGINAL NOTES (for review) ---
 %
 % -Dedicated Benchmarking with Queries from T3 paper for PG, we had time limitations:
 %

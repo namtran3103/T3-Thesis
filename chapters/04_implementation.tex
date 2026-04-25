@@ -128,7 +128,7 @@ Each pipeline's feature vector consists of two concatenated blocks, as Figure~\r
   \item \textbf{Operator-level block.}
   For every operator that occurs in \texttt{parsed\_plans}, we assign a slice in the feature vector.
   If multiple operators of the same type occur in the pipeline, we sum the features over all occurences.
-  In figure~\ref{fig:pg-feature-vector-snippet}, the excerpt of the operator-type block for the \texttt{Nested\_Loop join} operator is depicted.
+  In Figure~\ref{fig:pg-feature-vector-snippet}, the excerpt of the operator-type block for the \texttt{Nested\_Loop join} operator is depicted.
 
   Depending on the operator type, we include different features. This feature set is derived from T3's Umbra implementation~\parencite{t3}.
   For example, a join would include different features than a scan, like in the Umbra/T3 approach.

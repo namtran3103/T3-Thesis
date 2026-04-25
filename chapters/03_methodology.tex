@@ -89,8 +89,11 @@ Our feature vector differs from the original T3 feature vector in the following 
 \begin{enumerate}
   \item \textbf{PostgreSQL-native operator features.} The \texttt{parsed\_plans} expose PostgreSQL-native operator nodes. 
   Thus, we add entries for these PostgreSQL-specific operators in the feature vector.
-  As no execution stages are available, we aggregate features only per operator.
-  Hence, we do not include the stage-based features of the original T3 feature mapper. This avoids inventing synthetic stages for every node.
+  
+  Regarding stages,T3's stage assignment is derived from Umbra-specific operator types and pipeline positions.
+  There is no direct equivalent mapping for PostgreSQL operators.
+  Hence, we decide against rewriting this logic entirely for PG and do not include stage-based features.
+  Instead, we aggregate features only per operator.
   \item \textbf{PostgreSQL planner cost estimates.} We include sums and extrema of PostgreSQL's \texttt{est\_cost} and \texttt{est\_startup\_cost} from \texttt{plan\_parameters} in the feature vector.
   These are optimizer-internal estimates of work and startup cost and are an additional PostgreSQL-specific signal that is not available in the Umbra feature vector.
   Consequently, we can include this information in the feature vector.
@@ -138,7 +141,7 @@ as demonstrated in the ablation study (see Section~\ref{sec:evaluation_ablation}
 
 In T3~\parencite{t3}, the training target is the per-tuple execution time for each individual pipeline instead,
 and the predicted pipeline times are summed to obtain the query runtime.
-We evaluate all three granularities --- per-query, per-pipeline, and per-tuple ---
+We evaluate all three granularities -- per-query, per-pipeline, and per-tuple --
 in the ablation study and discuss why per-query works best for our case.
 
 Our model uses gradient boosted decision trees as implemented in LightGBM~\parencite{lightgbm}.

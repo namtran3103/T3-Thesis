@@ -19,7 +19,7 @@
 
 \refsection{0}
   \datalist[entry]{anyt/global//global/global/global}
-    \entry{postgresql_docs_pg_class}{manual}{}{}
+    \entry{postgresql_docs_planner_stats}{manual}{}{}
       \list{organization}{1}{%
         {The {PostgreSQL} Global Development Group}%
       }
@@ -27,6 +27,24 @@
       \field{sortinit}{2}
       \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{extraalpha}{1}
+      \field{labeltitlesource}{title}
+      \field{title}{{PostgreSQL} 16 Documentation: How the Planner Uses Statistics}
+      \field{year}{2024}
+      \verb{urlraw}
+      \verb https://www.postgresql.org/docs/16/planner-stats-details.html
+      \endverb
+      \verb{url}
+      \verb https://www.postgresql.org/docs/16/planner-stats-details.html
+      \endverb
+    \endentry
+    \entry{postgresql_docs_pg_class}{manual}{}{}
+      \list{organization}{1}{%
+        {The {PostgreSQL} Global Development Group}%
+      }
+      \field{labelalpha}{24}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{extraalpha}{2}
       \field{labeltitlesource}{title}
       \field{title}{{PostgreSQL} 16 Documentation: System Catalogs -- \texttt{pg\_class}}
       \field{year}{2024}
@@ -44,7 +62,7 @@
       \field{labelalpha}{24}
       \field{sortinit}{2}
       \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
-      \field{extraalpha}{2}
+      \field{extraalpha}{3}
       \field{labeltitlesource}{title}
       \field{title}{{PostgreSQL} 16 Documentation: The Path of a Query}
       \field{year}{2024}
@@ -53,6 +71,85 @@
       \endverb
       \verb{url}
       \verb https://www.postgresql.org/docs/16/query-path.html
+      \endverb
+    \endentry
+    \entry{cart}{book}{}{}
+      \name{author}{4}{}{%
+        {{un=0,uniquepart=base,hash=132b7100417675d55d5d4d8b244f7a34}{%
+           family={Breiman},
+           familyi={B\bibinitperiod},
+           given={Leo},
+           giveni={L\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=ce884cc144616c39e723a8fe2eb3c879}{%
+           family={Friedman},
+           familyi={F\bibinitperiod},
+           given={Jerome\bibnamedelima H.},
+           giveni={J\bibinitperiod\bibinitdelim H\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=6b962e9920d22ad7331cdca41a388e9d}{%
+           family={Olshen},
+           familyi={O\bibinitperiod},
+           given={Richard\bibnamedelima A.},
+           giveni={R\bibinitperiod\bibinitdelim A\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=ed356c1829419cf046f711730f90941a}{%
+           family={Stone},
+           familyi={S\bibinitperiod},
+           given={Charles\bibnamedelima J.},
+           giveni={C\bibinitperiod\bibinitdelim J\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Wadsworth \& Brooks/Cole}%
+      }
+      \strng{namehash}{0fd788250a2bc43bdb32336f6efda1bd}
+      \strng{fullhash}{0fd788250a2bc43bdb32336f6efda1bd}
+      \strng{fullhashraw}{0fd788250a2bc43bdb32336f6efda1bd}
+      \strng{bibnamehash}{0fd788250a2bc43bdb32336f6efda1bd}
+      \strng{authorbibnamehash}{0fd788250a2bc43bdb32336f6efda1bd}
+      \strng{authornamehash}{0fd788250a2bc43bdb32336f6efda1bd}
+      \strng{authorfullhash}{0fd788250a2bc43bdb32336f6efda1bd}
+      \strng{authorfullhashraw}{0fd788250a2bc43bdb32336f6efda1bd}
+      \field{labelalpha}{Bre+84}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Classification and Regression Trees}
+      \field{year}{1984}
+    \endentry
+    \entry{gradientboosting}{article}{}{}
+      \name{author}{1}{}{%
+        {{un=0,uniquepart=base,hash=ce884cc144616c39e723a8fe2eb3c879}{%
+           family={Friedman},
+           familyi={F\bibinitperiod},
+           given={Jerome\bibnamedelima H.},
+           giveni={J\bibinitperiod\bibinitdelim H\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{ce884cc144616c39e723a8fe2eb3c879}
+      \strng{fullhash}{ce884cc144616c39e723a8fe2eb3c879}
+      \strng{fullhashraw}{ce884cc144616c39e723a8fe2eb3c879}
+      \strng{bibnamehash}{ce884cc144616c39e723a8fe2eb3c879}
+      \strng{authorbibnamehash}{ce884cc144616c39e723a8fe2eb3c879}
+      \strng{authornamehash}{ce884cc144616c39e723a8fe2eb3c879}
+      \strng{authorfullhash}{ce884cc144616c39e723a8fe2eb3c879}
+      \strng{authorfullhashraw}{ce884cc144616c39e723a8fe2eb3c879}
+      \field{labelalpha}{Fri01}
+      \field{sortinit}{F}
+      \field{sortinithash}{2638baaa20439f1b5a8f80c6c08a13b4}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{The Annals of Statistics}
+      \field{number}{5}
+      \field{title}{Greedy Function Approximation: A Gradient Boosting Machine}
+      \field{volume}{29}
+      \field{year}{2001}
+      \field{pages}{1189\bibrangedash 1232}
+      \range{pages}{44}
+      \verb{doi}
+      \verb 10.1214/aos/1013203451
       \endverb
     \endentry
     \entry{flatvector}{inproceedings}{}{}
@@ -123,6 +220,52 @@
       \range{pages}{12}
       \verb{doi}
       \verb 10.1109/ICDE.2009.130
+      \endverb
+    \endentry
+    \entry{deeplearning}{book}{}{}
+      \name{author}{3}{}{%
+        {{un=0,uniquepart=base,hash=5d2585c11210cf1d4512e6e0a03ec315}{%
+           family={Goodfellow},
+           familyi={G\bibinitperiod},
+           given={Ian},
+           giveni={I\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=40a8e4774982146adc2688546f54efb2}{%
+           family={Bengio},
+           familyi={B\bibinitperiod},
+           given={Yoshua},
+           giveni={Y\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=ccec1ccd2e1aa86960eb2e872c6b7020}{%
+           family={Courville},
+           familyi={C\bibinitperiod},
+           given={Aaron},
+           giveni={A\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {MIT Press}%
+      }
+      \strng{namehash}{3ae53fe582e8a815b118d26947eaa326}
+      \strng{fullhash}{3ae53fe582e8a815b118d26947eaa326}
+      \strng{fullhashraw}{3ae53fe582e8a815b118d26947eaa326}
+      \strng{bibnamehash}{3ae53fe582e8a815b118d26947eaa326}
+      \strng{authorbibnamehash}{3ae53fe582e8a815b118d26947eaa326}
+      \strng{authornamehash}{3ae53fe582e8a815b118d26947eaa326}
+      \strng{authorfullhash}{3ae53fe582e8a815b118d26947eaa326}
+      \strng{authorfullhashraw}{3ae53fe582e8a815b118d26947eaa326}
+      \field{labelalpha}{GBC16}
+      \field{sortinit}{G}
+      \field{sortinithash}{32d67eca0634bf53703493fb1090a2e8}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Deep Learning}
+      \field{year}{2016}
+      \verb{urlraw}
+      \verb https://www.deeplearningbook.org
+      \endverb
+      \verb{url}
+      \verb https://www.deeplearningbook.org
       \endverb
     \endentry
     \entry{graefe1994}{article}{}{}
@@ -584,6 +727,51 @@
       \range{pages}{14}
       \verb{doi}
       \verb 10.14778/3342263.3342644
+      \endverb
+    \endentry
+    \entry{qerror}{article}{}{}
+      \name{author}{3}{}{%
+        {{un=0,uniquepart=base,hash=18048a3dcb210001528a144f48c7e884}{%
+           family={Moerkotte},
+           familyi={M\bibinitperiod},
+           given={Guido},
+           giveni={G\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=856106a72d787bcea4281fca718cd7d7}{%
+           family={Neumann},
+           familyi={N\bibinitperiod},
+           given={Thomas},
+           giveni={T\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=9680624079f3ea1d5040312490ab042d}{%
+           family={Steidl},
+           familyi={S\bibinitperiod},
+           given={Gabriele},
+           giveni={G\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{9bffb1a9bd87d7881342aded0bb3eefc}
+      \strng{fullhash}{9bffb1a9bd87d7881342aded0bb3eefc}
+      \strng{fullhashraw}{9bffb1a9bd87d7881342aded0bb3eefc}
+      \strng{bibnamehash}{9bffb1a9bd87d7881342aded0bb3eefc}
+      \strng{authorbibnamehash}{9bffb1a9bd87d7881342aded0bb3eefc}
+      \strng{authornamehash}{9bffb1a9bd87d7881342aded0bb3eefc}
+      \strng{authorfullhash}{9bffb1a9bd87d7881342aded0bb3eefc}
+      \strng{authorfullhashraw}{9bffb1a9bd87d7881342aded0bb3eefc}
+      \field{labelalpha}{MNS09}
+      \field{sortinit}{M}
+      \field{sortinithash}{4625c616857f13d17ce56f7d4f97d451}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Proc. VLDB Endow.}
+      \field{number}{1}
+      \field{title}{Preventing bad plans by bounding the impact of cardinality estimation errors}
+      \field{volume}{2}
+      \field{year}{2009}
+      \field{pages}{982\bibrangedash 993}
+      \range{pages}{12}
+      \verb{doi}
+      \verb 10.14778/1687627.1687738
       \endverb
     \endentry
     \entry{qppnet}{article}{}{}
