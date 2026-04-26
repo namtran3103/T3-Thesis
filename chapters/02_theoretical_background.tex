@@ -195,7 +195,7 @@ This limitation motivated \emph{learned approaches}: rather than hand-crafted fo
 Learned models can capture complex, hardware-specific execution patterns that are difficult to express analytically.
 The following two subsections introduce the two main families of learned models relevant to this thesis: neural networks and decision trees.
 
-\subsection{Neural Networks}
+\subsection{Neural Networks}\label{subsec:neural_networks}
 
 Neural networks are a class of machine learning models that learn to approximate functions from data by composing multiple layers of parameterized transformations~\parencite{deeplearning}.
 At each layer, the network takes a \emph{vector} — a fixed-length array of numbers — as input, multiplies it by a learned weight matrix, adds a bias, and applies a nonlinear activation function to produce a new vector.
@@ -341,5 +341,87 @@ Hence, T3 is an extremely fast performance prediction model~\parencite{t3}.
 
 \section{Related Work}
 
+\paragraph{Main Memory System Cost Models.}
+Performance prediction has been a research challenge for decades.
+Listgarten and Neimat identify main-memory databases as a disruptive new technology and provide one of the first dedicated cost models for such systems~\parencite{listgarten}.
+Manegold et al.\ extend this line of work to hierarchical memory systems, proposing a generic approach to building cost models that account for cache, RAM, and disk access costs~\parencite{manegold}.
 
+Both works rely on hand-crafted analytical formulas rather than learned approaches.
+Thus, they predate the availability of the machine learning techniques used in modern performance prediction.
+
+\paragraph{Early Learning-Based Methods.}
+Before neural networks became widespread, machine learning was already applied to performance prediction.
+Gupta et al.\ use a technique similar to decision trees to predict query time ranges as early as 2008~\parencite{pqr}.
+
+\textit{FlatVector}~\parencite{flatvector} is an early machine-learning-based approach
+that encodes each query as a flat feature vector of aggregated statistics
+and fits a regression model over it.
+It makes no use of the tree structure of query plans
+and serves primarily as a simple non-neural baseline.
+
+\paragraph{Workload-Based Neural Network Models.}
+When neural networks became more widely adopted, they were applied to performance prediction for fixed workloads.
+
+\textit{MSCN}~\parencite{mscn} is a multi-set convolutional network originally proposed for cardinality estimation.
+It encodes tables, joins, and predicates as separate sets of feature vectors
+and applies a small neural network to each set before combining their outputs.
+Also, it can be used as a learned cost model.
+
+\textit{QPPNet}~\parencite{qppnet} is a plan-structured neural network for query performance prediction.
+It assigns a separate neural unit to each operator type in the query plan tree,
+so that each operator's representation is computed from the representations of its child operators.
+Predictions are aggregated bottom-up to produce a single runtime estimate per query.
+
+\textit{E2E}~\parencite{e2e} is an end-to-end learned cost estimator based on tree-structured convolutional networks.
+It encodes the full query plan tree by recursively applying a convolutional layer to parent--child pairs of operators
+and learns to predict query execution time directly from the encoded plan representation.
+
+\textit{NEO}~\parencite{neo} is a learned query optimizer that uses a value network
+to score query plans and guide join ordering.
+Its internal cost model is a tree-convolutional neural network
+that encodes query plans similarly to E2E.
+
+\textit{QueryFormer}~\parencite{queryformer} is a transformer-based cost model
+that encodes query plans as trees using a tree-structured attention mechanism.
+By attending over all operator nodes jointly,
+it can capture long-range dependencies between operators in a plan,
+which is difficult for purely bottom-up tree-convolutional models.
+
+These workload-specific models achieve strong prediction accuracy but require retraining for every new database~\parencite{zeroshot} and suffer from high inference latency~\parencite{stage}.
+
+\paragraph{Modern Zero-Shot Models.}
+A key limitation of workload-based models is that they must be retrained for every new database instance.
+Zero-shot models address this by training across many databases and transferring to unseen ones without retraining.
+
+\textit{Stage}~\parencite{stage} is a production performance prediction model built for the entire Amazon Redshift workload.
+It leverages the accuracy of neural networks while improving latency through a model hierarchy: a query cache is checked first, then a local decision tree, and finally the full neural network as a fallback.
+
+\textit{DACE}~\parencite{dace} is a database-agnostic cost estimator.
+It uses an attention-based neural network to encode query plans
+and is pre-trained across multiple databases.
+Subsequently, it can generalize to unseen database instances
+without re-training.
+
+\textit{TATA}~\parencite{tata} is a transfer learning framework for query plan representations.
+It transfers a representation trained on one task -- such as cost estimation -- to other tasks such as query optimization or index selection, reducing dataset collection cost by up to 5$\times$.
+
+\paragraph{T3-Based Models with Different Feature Vectors.}
+Wehrstein et al.~\parencite{jobcomplex} also adapted the Umbra T3 model for PostgreSQL.
+They use a hybrid feature vector that takes the original Umbra feature vector, and maps matching PostgreSQL operators to Umbra operators.
+On top of that, they add additional features that are specific to PostgreSQL, like the Merge Join operator.
+
+However, their approach does not use fields that account for other relevant PostgreSQL-specific characteristics, like the planned workers or the estimated startup cost fields.
+Our approach instead constructs a fully PostgreSQL-native feature vector from the ground up.
+Whether this design leads to better accuracy is investigated in this thesis.
+
+\paragraph{Evaluation of Learned Cost Models.}
+Heinrich et al.\ systematically evaluate seven state-of-the-art learned cost models (LCMs) -- FlatVector, MSCN, E2E, QPPNet, QueryFormer, ZeroShot, and DACE -- on three core query optimization tasks.
+They evaluate join ordering, access path selection, and physical operator selection~\parencite{howgoodlcm}.
+
+Their key finding is that while LCMs outperform PostgreSQL's built-in estimator in cost estimation accuracy, this does not automatically translate into better plan selection.
+They find that high tail errors still cause poor plan choices in downstream optimization tasks.
+This concerns plan selection, not runtime prediction accuracy, and is therefore consistent with our results.
+For example, in our evaluation, PostgreSQL's built-in estimator achieves a median Q-error of over 1000 for runtime prediction, far worse than all learned models.
+
+Our thesis focuses on prediction accuracy rather than plan selection, and this work confirms that prediction quality remains a meaningful and open research problem.
 
