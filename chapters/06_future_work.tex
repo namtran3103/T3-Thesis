@@ -71,7 +71,7 @@ could determine whether they help or hurt prediction accuracy.
 \paragraph{Mitigating the pipeline timing issue.}
 The pipeline timing problem identified in the ablation study arises because
 PostgreSQL's iterator model causes per-node timings to overlap across pipeline boundaries.
-Future work could investigate this issue and provide mitigation approaches.
+Future work could investigate this issue and provide mitigation approaches apart from the currently applied normalization.
 Subsequently, this could provide more accurate per-pipeline labels and could make the per-pipeline and per-tuple
 prediction variants more accurate.
 

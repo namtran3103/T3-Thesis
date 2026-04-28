@@ -3,97 +3,44 @@
 
 \chapter{Introduction}\label{chapter:introduction}
 
-ABSTRACT FEHLT
+Predicting the runtime of a database query before executing it is a fundamental problem in database systems research.
+Performance predictions enable query scheduling, resource scaling, and query optimization~\parencite{t3}.
+A query optimizer, for instance, compares alternative execution plans and selects the one it estimates to be fastest.
+This makes the quality of runtime predictions directly relevant to the efficiency of query execution.
 
-RESEARCH QUESTION. UND DANN DIESE AUFGREIFEN IN EVALUATION AM ANFANG.
+Traditional cost models, such as the one built into PostgreSQL, rely on hand-crafted formulas and statistical summaries of the stored data~\parencite{postgresql_docs_planner_stats}.
+However, these models struggle with complex queries.
 
-\section{Section}
-Citation test~\parencite{latex}.
+Learned cost models address this by using machine learning to capture system behavior from execution traces.
+Recent work shows that they substantially outperform hand-crafted models~\parencite{zeroshot}.
+Neural network approaches achieve high accuracy but suffer from high prediction latency~\parencite{stage}.
 
-Acronyms must be added in \texttt{main.tex} and are referenced using macros. The first occurrence is automatically replaced with the long version of the acronym, while all subsequent usages use the abbreviation.
+Rieger and Neumann address this trade-off with T3 (Tuple Time Tree)~\parencite{t3}, a compiled gradient-boosted decision tree model for the Umbra database system.
+T3 achieves state-of-the-art accuracy while being orders of magnitude faster than neural network models.
+It relies on two core ideas: decomposing query plans into pipelines and predicting the per-tuple (per-row) execution time for each pipeline independently.
+Rieger and Neumann explicitly note that, while T3 is implemented for Umbra, its concepts are transferable to other database systems~\parencite{t3}.
 
-E.g. \texttt{\textbackslash ac\{TUM\}, \textbackslash ac\{TUM\}} $\Rightarrow$ \ac{TUM}, \ac{TUM}
+PostgreSQL is one of the most widely deployed open-source relational database systems~\parencite{dbengines}.
+It uses the Volcano iterator model~\parencite{graefe1994} rather than Umbra's compiled execution model~\parencite{umbra2020}, and exposes different plan information~\parencite{postgresql_docs_query_path}.
+This raises the question of whether T3's pipeline-based approach can effectively transfer to PostgreSQL.
 
-For more details, see the documentation of the \texttt{acronym} package\footnote{\url{https://ctan.org/pkg/acronym}}.
-\subsection{Subsection}
+\paragraph{Research Question.}
+\textit{How accurately can a decision tree model predict query runtimes on an iterator-based database system such as PostgreSQL?
+Which of T3's key concepts -- pipeline-based representation and tuple-centric prediction targets -- transfer effectively to this setting?
+How competitive is the result against existing learned cost models?}
 
-See~\autoref{tab:sample}, \autoref{fig:sample-drawing}, \autoref{fig:sample-plot}, \autoref{fig:sample-listing}.
+\paragraph{}
+To answer this, we adapt T3 for PostgreSQL using the public ZeroShot benchmark data~\parencite{zeroshot}.
+We convert parsed PostgreSQL execution plans into T3's pipeline representation and construct a PostgreSQL-native feature vector.
+We then train and evaluate a LightGBM model~\parencite{lightgbm} on a leave-one-database-out split to test generalization across unseen database instances.
 
-\begin{table}[htpb]
-  \caption[Example table]{An example for a simple table.}\label{tab:sample}
-  \centering
-  \begin{tabular}{l l l l}
-    \toprule
-      A & B & C & D \\
-    \midrule
-      1 & 2 & 1 & 2 \\
-      2 & 3 & 2 & 3 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+Our results show that the adapted model generalizes well.
+Furthermore, on the Join Order Benchmark, our model outperforms an earlier T3-based PostgreSQL implementation by Wehrstein et al.~\parencite{jobcomplex}, demonstrating the importance of PostgreSQL-native features.
 
-\begin{figure}[htpb]
-  \centering
-  % This should probably go into a file in figures/
-  \begin{tikzpicture}[node distance=3cm]
-    \node (R0) {$R_1$};
-    \node (R1) [right of=R0] {$R_2$};
-    \node (R2) [below of=R1] {$R_4$};
-    \node (R3) [below of=R0] {$R_3$};
-    \node (R4) [right of=R1] {$R_5$};
+Compared to a broader set of learned cost models, our model ranks among the top performers, achieving a median Q-Error of 2.42.
+However, it still falls behind state-of-the-art neural network models and T3 (Umbra).
 
-    \path[every node]
-      (R0) edge (R1)
-      (R0) edge (R3)
-      (R3) edge (R2)
-      (R2) edge (R1)
-      (R1) edge (R4);
-  \end{tikzpicture}
-  \caption[Example drawing]{An example for a simple drawing.}\label{fig:sample-drawing}
-\end{figure}
+A key finding is that PostgreSQL's iterator-based execution model makes exact pipeline timing extraction infeasible, which limits the benefit of T3's per-pipeline and per-tuple prediction strategies.
+Per-query prediction works best in our PostgreSQL setting.
 
-\begin{figure}[htpb]
-  \centering
 
-  \pgfplotstableset{col sep=&, row sep=\\}
-  % This should probably go into a file in data/
-  \pgfplotstableread{
-    a & b    \\
-    1 & 1000 \\
-    2 & 1500 \\
-    3 & 1600 \\
-  }\exampleA
-  \pgfplotstableread{
-    a & b    \\
-    1 & 1200 \\
-    2 & 800 \\
-    3 & 1400 \\
-  }\exampleB
-  % This should probably go into a file in figures/
-  \begin{tikzpicture}
-    \begin{axis}[
-        ymin=0,
-        legend style={legend pos=south east},
-        grid,
-        thick,
-        ylabel=Y,
-        xlabel=X
-      ]
-      \addplot table[x=a, y=b]{\exampleA};
-      \addlegendentry{Example A}
-      \addplot table[x=a, y=b]{\exampleB};
-      \addlegendentry{Example B}
-    \end{axis}
-  \end{tikzpicture}
-  \caption[Example plot]{An example for a simple plot.}\label{fig:sample-plot}
-\end{figure}
-
-\begin{figure}[htpb]
-  \centering
-  \begin{tabular}{c}
-  \begin{lstlisting}[language=SQL]
-    SELECT * FROM tbl WHERE tbl.str = "str"
-  \end{lstlisting}
-  \end{tabular}
-  \caption[Example listing]{An example for a source code listing.}\label{fig:sample-listing}
-\end{figure}

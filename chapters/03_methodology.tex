@@ -18,8 +18,9 @@ The pipeline decomposition is therefore used for feature extraction,
 not as a separate prediction unit.
 
 \section{Data and Preprocessing}
-Regarding the training data, we use the public Zero-Shot benchmark data introduced with the Zero-Shot Cost Model.  
-The benchmark is particularly suitable for this thesis because it consists of real-world datasets (e.g., IMDB) and synthetically generated workloads designed to cover diverse query structures.
+Regarding the training data, we use the public ZeroShot benchmark data introduced with the ZeroShot Cost Model~\parencite{zeroshot}.
+It is a PostgreSQL benchmark, which makes it directly suitable for our implementation.
+Furthermore, it consists of real-world datasets (e.g., IMDB) and synthetically generated workloads designed to cover diverse query structures.
 This includes \emph{SPAJ} (Select-Project-Aggregate-Join) queries with conjunctive predicates.
 Overall, the benchmark contains 20 databases with large variation in tables, columns, and foreign-key relationships \parencite{zeroshot}.
 

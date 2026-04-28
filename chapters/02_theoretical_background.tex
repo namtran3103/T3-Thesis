@@ -222,7 +222,7 @@ However, they come at the cost of high inference latency.
 Since a query must wait for its prediction before being scheduled, this latency adds directly to every query's execution time — a particular problem for short-running queries~\parencite{t3}.
 
 \paragraph{ZeroShot.}
-ZeroShot~\parencite{zeroshot} is a neural cost model that addresses a key limitation of workload-driven approaches: such models must be retrained from scratch for every new database, requiring costly collection of training queries.
+ZeroShot~\parencite{zeroshot} is a neural cost model for PostgreSQL that addresses a key limitation of workload-driven approaches: such models must be retrained from scratch for every new database, requiring costly collection of training queries.
 ZeroShot instead trains a single model across a variety of databases and then transfers it to unseen ones without any retraining~\parencite{zeroshot}.
 
 The key enabler is a \emph{transferable query representation}: the query plan is encoded as a graph where all node features are chosen to be meaningful across databases — using predicate structure and data types rather than database-specific literals or column names~\parencite{zeroshot}.

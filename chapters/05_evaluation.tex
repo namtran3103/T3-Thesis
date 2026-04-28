@@ -4,6 +4,7 @@
 \chapter{Evaluation}\label{chapter:evaluation}
 
 We provide an evaluation of the performance of our model and compare it to other work.
+This answers the three research questions posed in Chapter~\ref{chapter:introduction}: how accurately a decision tree model predicts PostgreSQL query runtimes, which of T3's key concepts transfer effectively, and how competitive the result is against existing learned cost models.
 Unless otherwise noted due to the nature of the evaluation, all results are evaluated on actual cardinalities.
 Therefore, we detach our results from the ongoing issue of accurately estimating cardinalities~\parencite{leis2018job}.
 
@@ -189,12 +190,12 @@ and improvements in cardinality estimation would directly benefit performance pr
 \end{figure}
 
 
-\paragraph{Query vs. Pipeline vs. Tuple Targets.}
+\paragraph{Per-Query vs. Per-Pipeline vs. Per-Tuple Targets.}
 
 Figure~\ref{fig:query_pipeline_tuple} compares Q-Error across three prediction granularities:
 per-query, per-pipeline, and per-tuple.
 This directly copies the evaluation of Rieger and Neumann~\parencite{t3},
-who find that finer granularities consistently improve accuracy —
+who find that finer granularities consistently improve accuracy —-
 with per-tuple being best and per-query being worst.
 We observe the opposite: the per-query model achieves the lowest Q-Error across all three metrics,
 while per-pipeline and per-tuple models perform noticeably worse.
@@ -223,23 +224,27 @@ However, the plan shows the total wall-clock interval for each node,
 so both the join (P1) and the scan (P0) receive overlapping time intervals —
 even though they belong to different derived pipelines.
 
-When these node durations are aggregated into per-pipeline times and then summed,
-the overlapping portion is counted twice,
-so the sum of pipeline runtimes exceeds the actual query execution time.
-A model trained to predict query runtime as the sum of pipeline runtimes
-will therefore over-predict, increasing Q-Error.
+To derive pipeline times from these overlapping intervals,
+we first compute each pipeline's span as the range from the earliest node start to the latest node stop within that pipeline.
+We then assign each pipeline a proportional share of the actual query time,
+scaled by its span relative to the total observed plan span.
+A correction factor is applied so that the pipeline times sum exactly to the actual query time.
+
+However, this proportional allocation is a heuristic.
+Because the node intervals overlap, the raw spans sum to more than the total observed span —
+and the correction factor compensates arithmetically rather than recovering the true exclusive execution time of each pipeline.
+The individual pipeline labels therefore remain imprecise,
+introducing noise into the training targets.
 
 As a concrete example, in plan 2 of \texttt{tpch/workload\_100k\_s1\_c8220},
 pipeline P0 (table scan) is recorded from $t = 946$ms to $t = 2{,}156$ms,
 giving a span of 1{,}210ms.
-Further, Pipeline P1 (table scan, join) is recorded from $t = 0$ms to $t = 2{,}185$ms,
+Pipeline P1 (table scan, join) is recorded from $t = 0$ms to $t = 2{,}185$ms,
 giving a span of 2{,}185ms.
-Thus, P0 is entirely nested inside P1's time window,
-so the 1{,}210ms during which both pipelines are simultaneously open
-is counted once in P0 and again in P1.
-When summed, the two spans alone already yield 3{,}395ms,
-yet the actual query execution time is only 2{,}239ms —
-an overcount of 52\%.
+P0 is entirely nested inside P1's time window,
+so the raw spans already sum to 3{,}395ms against an actual query time of 2{,}239ms.
+The correction factor of rescales both pipeline times so their sum is correct on a query level,
+but it cannot determine how much of the 2{,}239ms truly belongs to P0 versus P1.
 
 The per-tuple approach, which divides the pipeline runtime into per-tuple runtimes, is additionally weakened by a difference in dataset characteristics.
 In T3, the query execution time span is larger than $10^{-5}$\,s to $10$\,s~\parencite{t3}.
@@ -250,8 +255,8 @@ Hence, normalizing by tuple count compresses the prediction target and improves 
 However, in our PostgreSQL dataset, query execution times span a much narrower range,
 as visible in Figure~\ref{fig:query_runtime_hist}.
 
-Subsequently, with a narrower range and per-pipeline targets that are already unreliable,
-the per-tuple decomposition provides no accuracy benefit and introduces additional inaccuracies instead.
+Subsequently, with a narrower range and per-pipeline targets that are already noisy,
+the per-tuple decomposition provides no accuracy benefit and introduces additional label inaccuracies instead.
 
 \begin{figure}[htpb]
   \centering

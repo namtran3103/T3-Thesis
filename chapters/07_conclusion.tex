@@ -3,96 +3,32 @@
 
 \chapter{Conclusion}\label{chapter:conclusion}
 
-AI acknowledgen
-Training Scripts brauchen wir für reproduction ohne MAX
+This thesis investigated how accurately a decision tree model can predict query runtimes on an iterator-based database system such as PostgreSQL.
+Furthermore, it analyzed which of T3's key concepts -- pipeline-based representation and tuple-centric prediction targets -- transfer effectively, and how the result compares to existing learned cost models.
 
-\section{Section}
-Citation test~\parencite{latex}.
+We adapted T3 for PostgreSQL by converting parsed ZeroShot execution plans into T3's pipeline representation and constructing a PostgreSQL-native feature vector.
+The feature vector includes PostgreSQL-specific signals such as planner cost estimates and planned parallelism alongside operator-level features derived from T3's Umbra design.
+We trained a LightGBM model with a leave-one-database-out split, mirroring both T3's and ZeroShot's generalization evaluation.
 
-Acronyms must be added in \texttt{main.tex} and are referenced using macros. The first occurrence is automatically replaced with the long version of the acronym, while all subsequent usages use the abbreviation.
+The model generalizes reliably across unseen PostgreSQL database instances, with a median Q-Error below 1.33 across all 20 ZeroShot databases.
+On the Join Order Benchmark, it clearly outperforms the T3-based PostgreSQL implementation of Wehrstein et al.~\parencite{jobcomplex}.
+Consequently, this confirms that a PostgreSQL-native feature vector is beneficial.
+Among all learned cost models evaluated on JOB, our model ranks 4th with a median Q-Error of 2.42.
+This is well ahead of most learned approaches and far better than PostgreSQL's built-in estimator at over 1000.
+However, it falls behind SOTA neural network models such as ZeroShot (1.58) and DACE (1.91), and behind T3 (Umbra).
 
-E.g. \texttt{\textbackslash ac\{TUM\}, \textbackslash ac\{TUM\}} $\Rightarrow$ \ac{TUM}, \ac{TUM}
+Regarding T3's key concepts, the pipeline-based representation transfers well.
+It provides the structural basis for feature extraction and produces a compact, informative feature vector.
 
-For more details, see the documentation of the \texttt{acronym} package\footnote{\url{https://ctan.org/pkg/acronym}}.
-\subsection{Subsection}
+However, tuple-centric prediction targets do not transfer.
+PostgreSQL's iterator model causes per-node timing intervals to overlap across pipeline boundaries, so true exclusive execution times per pipeline are unrecoverable.
+Per-query prediction therefore works best -- the opposite of T3's finding for Umbra.
 
-See~\autoref{tab:sample}, \autoref{fig:sample-drawing}, \autoref{fig:sample-plot}, \autoref{fig:sample-listing}.
+\paragraph{nochmal korrigieren.}
+Finally, a promising path to closing the gap to T3 (Umbra) and other SOTA models is a dedicated PostgreSQL benchmark covering a wider range of query types and runtimes.
+Subsequently, the per-tuple approach could be re-evaluated, especially with future work concerning the pipeline timing issue.
+A purely query-level feature vector -- bypassing pipeline decomposition -- could further sidestep the timing issue while retaining the speed advantage of LightGBM.
+Prediction latency should also be benchmarked and potentially improved through native code compilation using the \texttt{lleaves} framework~\parencite{t3}.
 
-\begin{table}[htpb]
-  \caption[Example table]{An example for a simple table.}\label{tab:sample}
-  \centering
-  \begin{tabular}{l l l l}
-    \toprule
-      A & B & C & D \\
-    \midrule
-      1 & 2 & 1 & 2 \\
-      2 & 3 & 2 & 3 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{figure}[htpb]
-  \centering
-  % This should probably go into a file in figures/
-  \begin{tikzpicture}[node distance=3cm]
-    \node (R0) {$R_1$};
-    \node (R1) [right of=R0] {$R_2$};
-    \node (R2) [below of=R1] {$R_4$};
-    \node (R3) [below of=R0] {$R_3$};
-    \node (R4) [right of=R1] {$R_5$};
-
-    \path[every node]
-      (R0) edge (R1)
-      (R0) edge (R3)
-      (R3) edge (R2)
-      (R2) edge (R1)
-      (R1) edge (R4);
-  \end{tikzpicture}
-  \caption[Example drawing]{An example for a simple drawing.}\label{fig:sample-drawing}
-\end{figure}
-
-\begin{figure}[htpb]
-  \centering
-
-  \pgfplotstableset{col sep=&, row sep=\\}
-  % This should probably go into a file in data/
-  \pgfplotstableread{
-    a & b    \\
-    1 & 1000 \\
-    2 & 1500 \\
-    3 & 1600 \\
-  }\exampleA
-  \pgfplotstableread{
-    a & b    \\
-    1 & 1200 \\
-    2 & 800 \\
-    3 & 1400 \\
-  }\exampleB
-  % This should probably go into a file in figures/
-  \begin{tikzpicture}
-    \begin{axis}[
-        ymin=0,
-        legend style={legend pos=south east},
-        grid,
-        thick,
-        ylabel=Y,
-        xlabel=X
-      ]
-      \addplot table[x=a, y=b]{\exampleA};
-      \addlegendentry{Example A}
-      \addplot table[x=a, y=b]{\exampleB};
-      \addlegendentry{Example B}
-    \end{axis}
-  \end{tikzpicture}
-  \caption[Example plot]{An example for a simple plot.}\label{fig:sample-plot}
-\end{figure}
-
-\begin{figure}[htpb]
-  \centering
-  \begin{tabular}{c}
-  \begin{lstlisting}[language=SQL]
-    SELECT * FROM tbl WHERE tbl.str = "str"
-  \end{lstlisting}
-  \end{tabular}
-  \caption[Example listing]{An example for a source code listing.}\label{fig:sample-listing}
-\end{figure}
+Overall, this work shows that T3's approach is viable beyond Umbra.
+Our results establish a competitive PostgreSQL baseline that future work can build on.
