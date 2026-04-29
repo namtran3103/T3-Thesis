@@ -24,11 +24,10 @@ However, tuple-centric prediction targets do not transfer.
 PostgreSQL's iterator model causes per-node timing intervals to overlap across pipeline boundaries, so true exclusive execution times per pipeline are unrecoverable.
 Per-query prediction therefore works best -- the opposite of T3's finding for Umbra.
 
-\paragraph{nochmal korrigieren.}
 Finally, a promising path to closing the gap to T3 (Umbra) and other SOTA models is a dedicated PostgreSQL benchmark covering a wider range of query types and runtimes.
 Subsequently, the per-tuple approach could be re-evaluated, especially with future work concerning the pipeline timing issue.
-A purely query-level feature vector -- bypassing pipeline decomposition -- could further sidestep the timing issue while retaining the speed advantage of LightGBM.
-Prediction latency should also be benchmarked and potentially improved through native code compilation using the \texttt{lleaves} framework~\parencite{t3}.
+A purely query-level feature vector -- bypassing pipeline decomposition -- could also be investigated.
+Moreover, prediction latency should also be benchmarked and potentially improved through native code compilation using the \texttt{lleaves} framework~\parencite{t3}.
 
 Overall, this work shows that T3's approach is viable beyond Umbra.
 Our results establish a competitive PostgreSQL baseline that future work can build on.

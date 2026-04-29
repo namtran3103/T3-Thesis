@@ -211,8 +211,9 @@ Unlike Umbra, PostgreSQL query plans do not expose pipeline execution times dire
 Instead, they must be derived from the per-node durations recorded by
 \texttt{EXPLAIN ANALYZE}~\parencite{postgresql_docs_query_path}.
 
-However, PostgreSQL uses the Volcano iterator model~\parencite{graefe1994},
+This derivation is fundamentally limited by PostgreSQL's Volcano iterator model~\parencite{graefe1994},
 which does not execute pipelines as separate sequential units.
+Nodes from different pipelines execute interleaved rather than one after the other.
 
 For example, a hash join operator (belonging to pipeline P1)
 builds its hash table by calling \texttt{next()} on its input table scan (belonging to pipeline P0)
@@ -220,8 +221,13 @@ one tuple at a time.
 The join and the scan therefore execute interleaved over the same wall-clock period:
 the join is active from its first \texttt{next()} call to the moment the hash table is complete,
 and the scan is active during every individual tuple fetch within that same period.
-However, the plan shows the total wall-clock interval for each node,
-so both the join (P1) and the scan (P0) receive overlapping time intervals —
+
+As a result, \texttt{EXPLAIN ANALYZE} reports two cumulative wall-clock timestamps per node:
+the time from query start to when the node produced its first output row,
+and the time to when it produced its last row.
+These are wall-clock durations, not exclusive execution times --
+each node's interval includes the time it spent waiting for its children.
+Consequently, both the join (P1) and the scan (P0) receive overlapping time intervals,
 even though they belong to different derived pipelines.
 
 To derive pipeline times from these overlapping intervals,
@@ -236,7 +242,7 @@ and the correction factor compensates arithmetically rather than recovering the 
 The individual pipeline labels therefore remain imprecise,
 introducing noise into the training targets.
 
-As a concrete example, in plan 2 of \texttt{tpch/workload\_100k\_s1\_c8220},
+For instance, in plan 2 of \texttt{tpch/workload\_100k\_s1\_c8220},
 pipeline P0 (table scan) is recorded from $t = 946$ms to $t = 2{,}156$ms,
 giving a span of 1{,}210ms.
 Pipeline P1 (table scan, join) is recorded from $t = 0$ms to $t = 2{,}185$ms,

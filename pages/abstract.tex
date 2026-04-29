@@ -1,3 +1,20 @@
 \chapter{\abstractname}
 
-%TODO: Abstract
+Predicting query runtimes accurately is a core challenge in database systems.
+Traditional cost models, such as PostgreSQL's built-in estimator, rely on hand-crafted formulas and struggle with complex queries -- achieving a median Q-Error of over 1000 on standard benchmarks.
+Learned cost models address this with machine learning, but neural network approaches introduce high prediction latency.
+T3 (Tuple Time Tree), a compiled decision tree model by Rieger and Neumann, resolves this trade-off: it achieves state-of-the-art accuracy on the Umbra database system at microsecond inference latency.
+Its authors note that T3's concepts are transferable to other database systems -- a claim this thesis investigates for PostgreSQL.
+
+We adapt T3 for PostgreSQL by converting ZeroShot benchmark execution plans into T3's pipeline representation and constructing a PostgreSQL-native feature vector.
+The vector captures PostgreSQL-specific signals -- including planner cost estimates, planned parallelism, and operator-level features -- and is used to train a LightGBM model in a leave-one-database-out setup.
+
+Our model generalizes well across 20 unseen PostgreSQL database instances, achieving a median Q-Error below 1.33.
+On the Join Order Benchmark, it outperforms a prior T3-based PostgreSQL implementation and ranks 4th among all evaluated learned cost models with a median Q-Error of 2.42, demonstrating that a PostgreSQL-native feature vector is key.
+
+However, not all T3 concepts transfer equally.
+The pipeline-based representation carries over well and forms an effective basis for feature extraction.
+Tuple-centric prediction targets, however, do not: PostgreSQL's Volcano iterator model causes per-node timing intervals to overlap across pipeline boundaries, making true exclusive per-pipeline execution times unrecoverable.
+As a result, per-query prediction outperforms finer-grained granularities -- the opposite of T3's finding for Umbra.
+
+This work establishes a competitive decision tree baseline for PostgreSQL runtime prediction and identifies the iterator model as the key structural barrier to a full T3 transfer.

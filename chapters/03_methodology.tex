@@ -18,7 +18,7 @@ The pipeline decomposition is therefore used for feature extraction,
 not as a separate prediction unit.
 
 \section{Data and Preprocessing}
-Regarding the training data, we use the public ZeroShot benchmark data introduced with the ZeroShot Cost Model~\parencite{zeroshot}.
+Regarding the training data, we use the public ZeroShot benchmark data introduced with the ZeroShot Cost Model.
 It is a PostgreSQL benchmark, which makes it directly suitable for our implementation.
 Furthermore, it consists of real-world datasets (e.g., IMDB) and synthetically generated workloads designed to cover diverse query structures.
 This includes \emph{SPAJ} (Select-Project-Aggregate-Join) queries with conjunctive predicates.
@@ -29,12 +29,12 @@ Similar to the T3 paper~\parencite{t3}, we can train the model on all but one da
 Moreover, as the widely used JOB workload is included, we can compare our performance predictions to other implementations later on.
 Further, PostgreSQL is the intended database system of our implementation, which avoids the effort of building a separate PostgreSQL benchmark.
 
-Following the benchmark construction described in the ZeroShot paper~\parencite{zeroshot}, queries are generated per database and executed on a PostgreSQL DBMS.
+Following the benchmark construction described in the ZeroShot paper, queries are generated per database and executed on a PostgreSQL DBMS.
 Then, they are stored as raw traces (i. e., the output of \texttt{EXPLAIN ANALYZE}).
-Next, the authors preprocess the queries to remove very long-running queries (queries above 30\,s are excluded) to keep the benchmark practical and reproducible \parencite{zeroshot}.
+Next, the authors preprocess the queries to remove very long-running queries (queries above 30\,s are excluded) to keep the benchmark practical and reproducible.
 A further preprocessing step is to parse the raw traces into structured plan representations.
 These \texttt{parsed\_plans} contain the operator nodes found in the raw traces, but organize them in a tree structure with node-wise attributes.
-For every node, e.g., operator type, estimated/actual cardinalities, widths, and runtimes are stored in the \texttt{plan\_parameters} field.
+For every node, e.g., operator type, estimated/actual cardinalities, widths, and runtimes are stored in the \texttt{plan\_parameters} field~\parencite{zeroshot}.
 
 The tree structure can be used to create pipelines and the node information will be used to train the model.
 Consequently, the parsed plans offer a good starting point for our pipeline and we can begin without further preprocessing.

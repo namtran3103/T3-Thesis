@@ -68,12 +68,18 @@ for complex queries (median Q-Error above 1000, see Table~\ref{tab:median_qerror
 A targeted ablation study that removes or replaces these planner-cost features
 could determine whether they help or hurt prediction accuracy.
 
+
 \paragraph{Mitigating the pipeline timing issue.}
 The pipeline timing problem identified in the ablation study arises because
-PostgreSQL's iterator model causes per-node timings to overlap across pipeline boundaries.
-Future work could investigate this issue and provide mitigation approaches apart from the currently applied normalization.
-Subsequently, this could provide more accurate per-pipeline labels and could make the per-pipeline and per-tuple
-prediction variants more accurate.
+PostgreSQL's \texttt{EXPLAIN ANALYZE} reports cumulative wall-clock intervals per node,
+not exclusive execution times~\parencite{postgresql_docs_explain}.
+A node's reported interval includes time spent waiting for its children,
+which causes intervals to overlap across pipeline boundaries.
+
+Hence, a thorough long-term approach would be to modify PostgreSQL's executor instrumentation to track exclusive CPU time per node directly.
+This would require extending the executor's timing hooks to subtract child contribution at collection time,
+giving ground-truth per-node exclusive times without any heuristic.
+Subsequently, this could serve as the basis for a dedicated benchmark that collects richer timing data than the current ZeroShot dataset provides.
 
 \section{Prediction Latency}
 

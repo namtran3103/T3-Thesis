@@ -73,7 +73,7 @@ This is one reason why more recent systems like Umbra take a different approach,
 
 \subsection{Compiled Query Execution (Umbra)}
 
-Umbra is a relational DBMS developed at the Technical University of Munich that is designed for high performance on modern hardware~\parencite{umbra2020}.
+Umbra is a relational DBMS developed at the Technical University of Munich that is designed for high performance on modern hardware.
 Unlike PG's interpreter-based approach, Umbra takes a fundamentally different execution strategy: it compiles each query plan into native machine code at query time~\parencite{umbra2020}.
 
 The motivation for this is to eliminate the per-tuple overhead of the iterator model.
@@ -100,7 +100,7 @@ At runtime, only the generated code runs.
 The scan drives execution by iterating over tuples, and each tuple is processed through the entire pipeline inline.
 This is the push-based contrast with PostgreSQL: in PG, the top-most operator drives execution by issuing \texttt{next()} calls all the way down the tree for every single tuple at runtime.
 
-Furthermore, instead of always compiling, Umbra employs an \emph{adaptive compilation strategy}~\parencite{umbra2020}.
+Furthermore, instead of always compiling, Umbra employs an \emph{adaptive compilation strategy}.
 Each pipeline step is first interpreted via an efficient bytecode virtual machine, avoiding compilation overhead entirely for cheap or short-running steps.
 For steps where compilation is beneficial, Umbra translates its custom intermediate representation (IR) into LLVM IR~\parencite{umbra2020}.
 LLVM (Low Level Virtual Machine) is a general-purpose compiler framework that then produces highly optimized native machine code~\parencite{neumann2011}.
@@ -197,12 +197,12 @@ The following two subsections introduce the two main families of learned models 
 
 \subsection{Neural Networks}\label{subsec:neural_networks}
 
-Neural networks are a class of machine learning models that learn to approximate functions from data by composing multiple layers of parameterized transformations~\parencite{deeplearning}.
+Neural networks are a class of machine learning models that learn to approximate functions from data by composing multiple layers of parameterized transformations.
 At each layer, the network takes a \emph{vector} — a fixed-length array of numbers — as input, multiplies it by a learned weight matrix, adds a bias, and applies a nonlinear activation function to produce a new vector.
 This new vector is then passed to the next layer as its input.
-By stacking many such layers, the network learns increasingly abstract \emph{representations} of the input: intermediate vectors that capture relevant patterns for the prediction task~\parencite{deeplearning}.
+By stacking many such layers, the network learns increasingly abstract \emph{representations} of the input: intermediate vectors that capture relevant patterns for the prediction task.
 The final layer produces the network's output — in the case of performance prediction, a single predicted runtime value.
-They are valued for their flexibility: given sufficient training data, they can capture highly nonlinear relationships between inputs and outputs.
+They are valued for their flexibility: given sufficient training data, they can capture highly nonlinear relationships between inputs and outputs~\parencite{deeplearning}.
 Hence, they are attractive for query performance prediction, where the relationship between a plan's structure and its execution time is complex and hardware-specific~\parencite{t3}.
 
 \paragraph{Neural Network Architectures for Query Plans.}
@@ -222,10 +222,10 @@ However, they come at the cost of high inference latency.
 Since a query must wait for its prediction before being scheduled, this latency adds directly to every query's execution time — a particular problem for short-running queries~\parencite{t3}.
 
 \paragraph{ZeroShot.}
-ZeroShot~\parencite{zeroshot} is a neural cost model for PostgreSQL that addresses a key limitation of workload-driven approaches: such models must be retrained from scratch for every new database, requiring costly collection of training queries.
+ZeroShot is a neural cost model for PostgreSQL that addresses a key limitation of workload-driven approaches: such models must be retrained from scratch for every new database, requiring costly collection of training queries.
 ZeroShot instead trains a single model across a variety of databases and then transfers it to unseen ones without any retraining~\parencite{zeroshot}.
 
-The key enabler is a \emph{transferable query representation}: the query plan is encoded as a graph where all node features are chosen to be meaningful across databases — using predicate structure and data types rather than database-specific literals or column names~\parencite{zeroshot}.
+The key enabler is a \emph{transferable query representation}: the query plan is encoded as a graph where all node features are chosen to be meaningful across databases — using predicate structure and data types rather than database-specific literals or column names.
 Representations are propagated bottom-up through the plan graph, and the resulting encoding of the root node is passed to a final network that predicts the runtime~\parencite{zeroshot}.
 
 This thesis uses the training data published alongside ZeroShot as its training data source.
@@ -238,7 +238,7 @@ For example, a node might check whether the estimated output cardinality of a pi
 Since inference only requires evaluating simple conditions and following branches, it is extremely fast.
 
 A single decision tree has limited expressiveness: the number of distinct predictions it can produce is bounded by the number of leaves~\parencite{cart}.
-\emph{Gradient boosting} addresses this by building an ensemble of trees sequentially~\parencite{gradientboosting}.
+\emph{Gradient boosting} addresses this by building an ensemble of trees sequentially.
 Each new tree is trained to predict the residual error left by all previous trees.
 Hence, the ensemble progressively reduces the prediction error, and the final prediction is the sum of all trees' outputs~\parencite{gradientboosting}.
 
@@ -251,12 +251,12 @@ This makes them orders of magnitude faster than neural networks at inference tim
 
 A well-known disadvantage is \emph{overfitting}.
 A single deep decision tree will memorize the training data rather than learning generalizable patterns~\parencite{cart}.
-Gradient boosting partially mitigates this through two mechanisms~\parencite{gradientboosting}.
+Gradient boosting partially mitigates this through two mechanisms.
 First, the total number of trees is capped: adding more trees eventually starts fitting noise in the training data rather than learning generalizable patterns, so training is stopped early.
 Second, each tree's contribution to the final prediction is scaled by a small factor (called \emph{shrinkage} or the \emph{learning rate}) — for example, 0.1 — so no single tree can push the prediction too far.
 Together, these controls reduce the risk that the ensemble memorizes the training data~\parencite{gradientboosting}.
 
-Moreover, another limitation is that decision trees require a \emph{flat feature vector} as input and cannot natively handle tree-structured data like query plans~\parencite{t3}.
+Moreover, another limitation is that decision trees require a \emph{flat feature vector} as input and cannot natively handle tree-structured data like query plans.
 Additionally, because possible prediction values are bounded by the number of leaves, a single decision tree struggles to predict accurately over a very wide range of target values~\parencite{t3}.
 Both of these limitations must be addressed through careful design, which T3 applies as described in the next subsection.
 
@@ -264,9 +264,9 @@ Both of these limitations must be addressed through careful design, which T3 app
 
 \subsection{T3}\label{subsec:t3}
 
-T3 (Tuple Time Tree) is a compiled decision tree model for query performance prediction that directly addresses both limitations described above~\parencite{t3}.
-It is designed specifically for Umbra~\parencite{t3} and serves as the base of this thesis.
-T3 achieves state-of-the-art accuracy while operating at around 4\,\textmu{}s inference latency -- roughly four orders of magnitude faster than neural network models such as ZeroShot~\parencite{t3}.
+T3 (Tuple Time Tree) is a compiled decision tree model for query performance prediction that directly addresses both limitations described above.
+It is designed specifically for Umbra and serves as the base of this thesis.
+T3 achieves state-of-the-art accuracy while operating at around 4\,\textmu{}s inference latency -- roughly four orders of magnitude faster than neural network models such as ZeroShot.
 This combination is achieved through three main ideas: a \emph{pipeline-based query plan representation}, \emph{tuple-centric prediction targets}, and \emph{model compilation to native machine code}~\parencite{t3}.
 
 Figure~\ref{fig:t3_process} shows a concrete example: a query plan is decomposed into six pipelines (P0--P5), each converted to its own feature vector.
@@ -285,7 +285,7 @@ T3 exploits the pipeline structure of Umbra's compiled execution model introduce
 Because Umbra already partitions query execution at pipeline breakers, each pipeline is a self-contained unit with a well-defined input cardinality, a fixed operator sequence, and a clear output.
 
 Therefore, T3 encodes each pipeline as a separate flat feature vector and predicts its execution time individually.
-The predicted query runtime is the sum of all pipeline times~\parencite{t3}.
+The predicted query runtime is the sum of all pipeline times.
 This decomposition simplifies the prediction problem: instead of capturing the combined behavior of all operators at once, the model focuses on the specific characteristics of each pipeline~\parencite{t3}.
 
 \paragraph{Feature Vectors.}
@@ -310,16 +310,16 @@ For each stage and stream combination, T3 records up to three numerical features
   \item \textbf{Cardinality.} The number of tuples in the stream, used for operators with nonlinear cost such as sorts or hash joins.
 \end{enumerate}
 The percentage feature is the most important one.
-An operator that only 1\% of tuples reach contributes almost nothing to runtime, regardless of how expensive it would be at full volume~\parencite{t3}.
+An operator that only 1\% of tuples reach contributes almost nothing to runtime, regardless of how expensive it would be at full volume.
 Additionally, T3 records the count of each operator-stage combination that appears in the pipeline.
 This lets the model handle pipelines where the same operator type occurs more than once~\parencite{t3}.
 
 Together, these features give a compact description of each pipeline's load.
 
 \paragraph{Tuple-Centric Prediction Targets.}
-T3's training data spans a runtime distribution from $10^{-15}$\,s to $1$\,s per tuple -- a range of fifteen orders of magnitude~\parencite{t3}.
+T3's training data spans a runtime distribution from $10^{-15}$\,s to $1$\,s per tuple -- a range of fifteen orders of magnitude.
 However, a decision tree can output only as many distinct values as it has leaves.
-Hence, directly predicting pipeline execution times over such a wide range comes with a loss of precision ~\parencite{t3}.
+Hence, directly predicting pipeline execution times over such a wide range comes with a loss of precision~\parencite{t3}.
 
 Instead, T3 addresses this by predicting the expected time to process a \emph{single tuple} through the pipeline.
 This fits naturally with Umbra's push-based model where tuples flow through the pipeline one by one.
@@ -329,13 +329,13 @@ This normalization compresses the prediction target range and improves accuracy.
 Additionally, the per-tuple times are log-transformed during training ($t' = -\log(t)$), so relative deviations are penalized equally for short and long queries~\parencite{t3}.
 
 \paragraph{Training, Compilation, and Generalization.}
-T3 generates its own training data by running 16 distinct query structures on Umbra across multiple database instances and recording the resulting pipeline execution times~\parencite{t3}.
+T3 generates its own training data by running 16 distinct query structures on Umbra across multiple database instances and recording the resulting pipeline execution times.
 It then trains a LightGBM ensemble of 200 gradient boosted trees on these records using the MAPE (Mean Absolute Percentage Error) objective.
 MAPE minimizes the average relative error across predictions rather than the absolute error.
 Subsequently, short and long pipelines contribute equally to training~\parencite{t3}.
 Following the zero-shot paradigm~\parencite{zeroshot}, T3 trains on all but one database instance and generalizes to the held-out one without any retraining~\parencite{t3}.
 
-After training, the model is compiled to native machine code via the \texttt{lleaves} framework, which converts each decision node to exactly one compare instruction and one branch instruction~\parencite{t3}.
+After training, the model is compiled to native machine code via the \texttt{lleaves} framework, which converts each decision node to exactly one compare instruction and one branch instruction.
 This compilation step is performed only once after training and reduces inference latency from 22\,\textmu{}s to approximately 4\,\textmu{}s.
 Hence, T3 is an extremely fast performance prediction model~\parencite{t3}.
 
