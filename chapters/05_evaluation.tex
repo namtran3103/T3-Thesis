@@ -106,8 +106,10 @@ Thus, it is still a good starting point.
 
 \paragraph{T3-based Models with Different Feature Vectors.}
 
-Wehrstein et al. ran the JOB-Benchmark on their T3-based model and reported a median Q-Error of 4.07, using estimated cardinalities~\parencite{jobcomplex}.
-Like before, they had the full 113 queries at disposal. We again use the 57th-best (p75) Q-Error value for the comparison with our model, this time selecting cardinality estimates to match their setup.
+The comparison above used actual cardinalities to match the setup reported by Rieger \& Neumann~\parencite{t3}.
+Wehrstein et al. instead report their results using estimated cardinalities~\parencite{jobcomplex}, so we switch to estimated cardinalities here to ensure a fair comparison.
+They ran the JOB-Benchmark on their T3-based model and reported a median Q-Error of 4.07.
+Like before, they had the full 113 queries at disposal, so we again use the 57th-best (p75) Q-Error value for our model.
 
 Although we are in the worst-case-scenario, our model clearly outperforms Wehrstein et al.'s model, as Figure~\ref{fig:comp_wehrstein} shows.
 A key difference between the models is the used feature vector, where only our model uses a completely PostgreSQL-native feature vector.
@@ -240,7 +242,7 @@ scaled by its span relative to the total observed plan span.
 A correction factor is applied so that the pipeline times sum exactly to the actual query time.
 
 However, this proportional allocation is a heuristic.
-Because the node intervals overlap, the raw spans sum to more than the total observed span —
+Because the node intervals overlap, the raw spans sum to more than the total observed span --
 and the correction factor compensates arithmetically rather than recovering the true exclusive execution time of each pipeline.
 The individual pipeline labels therefore remain imprecise,
 introducing noise into the training targets.

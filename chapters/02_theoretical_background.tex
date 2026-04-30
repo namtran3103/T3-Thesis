@@ -16,17 +16,17 @@ When a DBMS receives an SQL query, it processes the query in three successive ph
 \begin{enumerate}
   \item \textbf{Parsing and translation.}
   The SQL text is checked for syntactic correctness and translated into an internal relational-algebra expression.
-  During this step, the parser also expands any \emph{view} references — a view is a named, stored query that acts as a virtual table — by substituting them with their underlying relational-algebra definition.
+  During this step, the parser also expands any \emph{view} references -- a view is a named, stored query that acts as a virtual table -- by substituting them with their underlying relational-algebra definition.
 
   \item \textbf{Optimization.}
   The \emph{optimizer} takes the relational-algebra expression and uses statistical summaries of the stored data to evaluate many possible \emph{execution plans}.
-  A plan is a tree of physical \emph{operators} — such as table scans, joins, sorts, and aggregations — along with instructions for how each operator should be executed (e.g., whether to use hash tables or nested loops).
+  A plan is a tree of physical \emph{operators} -- such as table scans, joins, sorts, and aggregations -- along with instructions for how each operator should be executed (e.g., whether to use hash tables or nested loops).
 
   One key input to the optimizer is the \emph{cardinality} of each operator: the number of rows (tuples) it is expected to produce or consume.
   Since the query has not yet been executed, the optimizer relies on \emph{estimated cardinalities}, derived from table sizes and column value distributions.
   These estimates directly influence which plan the optimizer considers cheapest and therefore selects.
 
-  The \emph{actual cardinality} — the true number of rows processed at runtime — only becomes known after execution.
+  The \emph{actual cardinality} -- the true number of rows processed at runtime -- only becomes known after execution.
   Estimated and actual cardinalities can differ substantially, which is a recurring challenge in performance prediction~\parencite{leis2018job}.
 
   \item \textbf{Evaluation.}
@@ -51,7 +51,7 @@ The \texttt{open()} call initializes the operator and its state, and \texttt{clo
 
 Operators are composed into a tree that mirrors the query plan.
 The root operator drives execution: each time it needs another tuple, it calls \texttt{next()} on its child operator.
-That child, in turn, calls \texttt{next()} on its own children, and so on, all the way down to the leaf operators — typically table scans — which actually read data from disk or memory.
+That child, in turn, calls \texttt{next()} on its own children, and so on, all the way down to the leaf operators -- typically table scans -- which actually read data from disk or memory.
 Tuples thus \emph{flow upward} through the tree one at a time, on demand.
 This is the defining property of pull-based execution: no operator pushes data forward; instead, every operator waits to be asked.
 
@@ -73,47 +73,32 @@ This is one reason why more recent systems like Umbra take a different approach,
 
 \subsection{Compiled Query Execution (Umbra)}
 
-Umbra is a relational DBMS developed at the Technical University of Munich that is designed for high performance on modern hardware.
+Umbra is a relational DBMS developed at the Technical University of Munich, designed for high performance on modern hardware as an evolution of the pure in-memory HyPer system~\parencite{umbra2020}.
 Unlike PG's interpreter-based approach, Umbra takes a fundamentally different execution strategy: it compiles each query plan into native machine code at query time~\parencite{umbra2020}.
 
 The motivation for this is to eliminate the per-tuple overhead of the iterator model.
 Recall that in PG's pull-based execution, every single tuple causes a chain of \texttt{next()} calls to travel through the operator tree.
 This introduces substantial function call overhead and makes it difficult for the CPU to predict branches and keep data in cache.
+
 In a compiled system, these operator boundaries dissolve.
-Instead of calling functions for each tuple, Umbra generates a single piece of native machine code that fuses the logic of multiple operators into tight loops.
-Data is \emph{pushed} forward through the code rather than pulled upward through function calls~\parencite{neumann2011}.
+For that, Umbra generates native code that fuses the logic of multiple consecutive operators into a single tight loop, pushing data forward through the code rather than pulling it upward through function calls~\parencite{neumann2011}.
+Moreover, Umbra employs an adaptive compilation strategy.
+Each step within a pipeline is first executed via a bytecode interpreter, and compilation to native machine code is triggered for parallel steps only when the expected benefit justifies the overhead~\parencite{umbra2020}.
 
-Concretely, the compilation model works as follows~\parencite{neumann2011}.
-Each operator participates in a \texttt{produce}/\texttt{consume} interface, which is a code-generation protocol invoked once at query compile time.
-Code generation starts at the root, which calls \texttt{produce()} on its child; this propagates downward until the leaf scan is reached.
-The scan emits a \texttt{for}-loop over its tuples and, for each tuple, calls \texttt{consume()} on its parent.
-Each \texttt{consume()} invocation emits that operator's processing logic inline — a predicate check, a buffer write, etc.\ — and then calls \texttt{consume()} further up.
-The result is a compact code fragment: a single \texttt{for}-loop from the scan, with the logic of every subsequent operator fused inside it, and no function-call boundaries between operators.
-
-In the scan-filter-sort example from the previous subsection, the first fragment is exactly such a loop.
-It scans tuples, checks the filter predicate inline, and writes qualifying tuples into a sort buffer.
-The sort, however, cannot produce output until all input is accumulated.
-Therefore, it acts as a materialization boundary, after which a second fragment handles the sorted output.
-These materialization boundaries between fragments are the concept of \emph{pipeline breakers}, introduced in the next subsection.
-
-At runtime, only the generated code runs.
-The scan drives execution by iterating over tuples, and each tuple is processed through the entire pipeline inline.
-This is the push-based contrast with PostgreSQL: in PG, the top-most operator drives execution by issuing \texttt{next()} calls all the way down the tree for every single tuple at runtime.
-
-Furthermore, instead of always compiling, Umbra employs an \emph{adaptive compilation strategy}.
-Each pipeline step is first interpreted via an efficient bytecode virtual machine, avoiding compilation overhead entirely for cheap or short-running steps.
-For steps where compilation is beneficial, Umbra translates its custom intermediate representation (IR) into LLVM IR~\parencite{umbra2020}.
-LLVM (Low Level Virtual Machine) is a general-purpose compiler framework that then produces highly optimized native machine code~\parencite{neumann2011}.
+Furthermore, a maximal sequence of operators that can be fused this way forms a natural execution unit.
+In the scan-filter-sort example from the previous subsection, the scan and filter are fused into one loop that writes qualifying tuples into a sort buffer.
+The sort, however, cannot produce output until all input is accumulated, so it acts as a materialization boundary after which a second loop handles the sorted output.
+These materialization boundaries are the concept of \emph{pipeline breakers}, introduced in the next subsection.
 
 As a concrete consequence for this thesis: \emph{T3}, the performance prediction model this work builds on, was originally designed for Umbra and therefore relies on Umbra's query plans and their structure~\parencite{t3}.
 The key structural concept that Umbra's compilation naturally exposes is the notion of \emph{pipelines}, which is described next.
 
 \subsection{Pipelines and Pipeline Breakers}
 
-The code fragments described above correspond to what are formally called \emph{pipelines} — a central concept in compiled query execution and the structural basis of T3's prediction approach~\parencite{t3}.
+The fused execution units described above are what are formally called \emph{pipelines} -- a central concept in compiled query execution and the structural basis of T3's prediction approach~\parencite{t3}.
 
 A \emph{pipeline} is a maximal sequence of operators that can process tuples in a fully streaming fashion, without any need to fully materialize an intermediate result.
-Within a pipeline, each tuple produced by the scan at the bottom flows immediately through all subsequent operators — being filtered, transformed, or joined — without waiting for any other tuple.
+Within a pipeline, each tuple produced by the scan at the bottom flows immediately through all subsequent operators -- being filtered, transformed, or joined -- without waiting for any other tuple.
 
 Moreover, a \emph{pipeline breaker} is an operator that interrupts this streaming flow, because it must see \emph{all} of its input before it can produce any output.
 The following are typical examples of pipeline breakers~\parencite{t3}:
@@ -127,7 +112,7 @@ The following are typical examples of pipeline breakers~\parencite{t3}:
 
 Not every operator is a pipeline breaker.
 A filter or a projection passes each tuple through without any materialization.
-The probe side of a hash join — where tuples are looked up in an already-built hash table — behaves the same way.
+The probe side of a hash join -- where tuples are looked up in an already-built hash table -- behaves the same way.
 Therefore, a single pipeline can contain multiple consecutive join probe stages.
 
 Thus, a query plan decomposes into a directed acyclic graph (DAG) of pipelines.
@@ -141,9 +126,9 @@ Section \ref{sec:databases_and_query_execution} described how a DBMS processes S
 To evaluate how well a performance prediction model estimates the execution time of such plans, its predictions must be compared against real, measured runtimes.
 Benchmarking provides a standardized framework for this.
 
-A benchmark consists of two components: a \emph{database instance} — a schema with populated data — and a \emph{workload} of representative SQL queries~\parencite{silberschatz2019}.
+A benchmark consists of two components: a \emph{database instance} -- a schema with populated data -- and a \emph{workload} of representative SQL queries~\parencite{silberschatz2019}.
 Each query in the workload is executed on the target DBMS and its wall-clock runtime is recorded.
-Since execution time depends directly on the underlying hardware — CPU speed, available memory, and storage throughput — benchmark results are always specific to the machine they were obtained on.
+Since execution time depends directly on the underlying hardware -- CPU speed, available memory, and storage throughput -- benchmark results are always specific to the machine they were obtained on.
 Absolute runtimes from different machines are therefore not directly comparable.
 The goal of a benchmark is instead to provide a fixed, reproducible environment in which different models or systems can be evaluated under identical conditions~\parencite{silberschatz2019}.
 
@@ -159,7 +144,7 @@ Evaluating a performance prediction model requires a metric that captures how fa
 Two aspects matter: the \emph{accuracy} on individual predictions and the \emph{distribution} of errors across the full workload.
 
 \paragraph{Q-Error.}
-A common metric for cardinality estimation is the \emph{Q-Error}, defined as~\parencite{qerror}:
+A metric originally introduced for cardinality estimation but widely adopted for performance prediction is the \emph{Q-Error}, defined as~\parencite{qerror}:
 \[
   \text{Q-Error}(\hat{t},\, t) = \max\!\left(\frac{\hat{t}}{t},\, \frac{t}{\hat{t}}\right),
 \]
@@ -188,7 +173,7 @@ In this context, models that predict actual query execution time are also referr
 
 Traditional cost models consist of hand-crafted mathematical formulas that are built into the DBMS optimizer.
 PostgreSQL's built-in estimator is a representative example: it computes cost scores from table sizes, index properties, and planner statistics without ever observing real execution times~\parencite{postgresql_docs_planner_stats}.
-These formulas rely heavily on cardinality estimates — and as described in Section~\ref{sec:databases_and_query_execution}, those estimates can be orders of magnitude off.
+These formulas rely heavily on cardinality estimates -- and as described in Section~\ref{sec:databases_and_query_execution}, those estimates can be orders of magnitude off.
 Since cost estimates are derived from cardinality estimates, such errors propagate directly into the cost model and can cause the optimizer to select suboptimal plans~\parencite{leis2018job}.
 
 This limitation motivated \emph{learned approaches}: rather than hand-crafted formulas, a model is trained on historical query executions to learn the mapping from plan features to runtime directly from data~\parencite{zeroshot}.
@@ -198,10 +183,10 @@ The following two subsections introduce the two main families of learned models 
 \subsection{Neural Networks}\label{subsec:neural_networks}
 
 Neural networks are a class of machine learning models that learn to approximate functions from data by composing multiple layers of parameterized transformations.
-At each layer, the network takes a \emph{vector} — a fixed-length array of numbers — as input, multiplies it by a learned weight matrix, adds a bias, and applies a nonlinear activation function to produce a new vector.
+At each layer, the network takes a \emph{vector} -- a fixed-length array of numbers -- as input, multiplies it by a learned weight matrix, adds a bias, and applies a nonlinear activation function to produce a new vector.
 This new vector is then passed to the next layer as its input.
 By stacking many such layers, the network learns increasingly abstract \emph{representations} of the input: intermediate vectors that capture relevant patterns for the prediction task.
-The final layer produces the network's output — in the case of performance prediction, a single predicted runtime value.
+The final layer produces the network's output -- in the case of performance prediction, a single predicted runtime value.
 They are valued for their flexibility: given sufficient training data, they can capture highly nonlinear relationships between inputs and outputs~\parencite{deeplearning}.
 Hence, they are attractive for query performance prediction, where the relationship between a plan's structure and its execution time is complex and hardware-specific~\parencite{t3}.
 
@@ -210,22 +195,22 @@ A query plan is a tree, and encoding a variable-depth tree into a fixed-size vec
 Three families of neural architectures have been used to address this.
 
 \emph{Tree-structured networks} process a query plan bottom-up: each operator's representation is computed from its own features and those of its children, recursively from the leaves to the root.
-The key idea is \emph{convolution} — the same learned transformation is applied at every operator node regardless of its position, so the model generalizes to plan trees of different shapes and sizes~\parencite{deeplearning, e2e, qppnet}.
+The key idea is \emph{convolution} -- the same learned transformation is applied at every operator node regardless of its position, so the model generalizes to plan trees of different shapes and sizes~\parencite{deeplearning, e2e, qppnet}.
 
 \emph{Attention-based models} allow each operator's representation vector to be updated based on the representation vectors of all other operators in the plan simultaneously, capturing dependencies between operators that are far apart in the tree~\parencite{queryformer}.
 
-\emph{Graph neural networks} represent the full query context — operators, tables, columns, and predicates — as a graph and propagate information through it~\parencite{zeroshot}.
+\emph{Graph neural networks} represent the full query context -- operators, tables, columns, and predicates -- as a graph and propagate information through it~\parencite{zeroshot}.
 
 \paragraph{Accuracy vs.\ Prediction Latency.}
 Neural network models can achieve high prediction accuracy.
 However, they come at the cost of high inference latency.
-Since a query must wait for its prediction before being scheduled, this latency adds directly to every query's execution time — a particular problem for short-running queries~\parencite{t3}.
+Since a query must wait for its prediction before being scheduled, this latency adds directly to every query's execution time -- a particular problem for short-running queries~\parencite{t3}.
 
 \paragraph{ZeroShot.}
 ZeroShot is a neural cost model for PostgreSQL that addresses a key limitation of workload-driven approaches: such models must be retrained from scratch for every new database, requiring costly collection of training queries.
 ZeroShot instead trains a single model across a variety of databases and then transfers it to unseen ones without any retraining~\parencite{zeroshot}.
 
-The key enabler is a \emph{transferable query representation}: the query plan is encoded as a graph where all node features are chosen to be meaningful across databases — using predicate structure and data types rather than database-specific literals or column names.
+The key enabler is a \emph{transferable query representation}: the query plan is encoded as a graph where all node features are chosen to be meaningful across databases -- using predicate structure and data types rather than database-specific literals or column names.
 Representations are propagated bottom-up through the plan graph, and the resulting encoding of the root node is passed to a final network that predicts the runtime~\parencite{zeroshot}.
 
 This thesis uses the training data published alongside ZeroShot as its training data source.
@@ -247,16 +232,16 @@ It is the framework used by T3~\parencite{t3}.
 
 \paragraph{Advantages and Disadvantages.}
 The key advantage of gradient boosted decision trees is \emph{inference speed}: traversing a tree requires only simple comparisons, with no matrix multiplications.
-This makes them orders of magnitude faster than neural networks at inference time — T3's compiled model achieves around 4\,\textmu{}s per prediction~\parencite{t3}.
+This makes them orders of magnitude faster than neural networks at inference time -- T3's compiled model achieves around 4\,\textmu{}s per prediction~\parencite{t3}.
 
 A well-known disadvantage is \emph{overfitting}.
 A single deep decision tree will memorize the training data rather than learning generalizable patterns~\parencite{cart}.
 Gradient boosting partially mitigates this through two mechanisms.
 First, the total number of trees is capped: adding more trees eventually starts fitting noise in the training data rather than learning generalizable patterns, so training is stopped early.
-Second, each tree's contribution to the final prediction is scaled by a small factor (called \emph{shrinkage} or the \emph{learning rate}) — for example, 0.1 — so no single tree can push the prediction too far.
+Second, each tree's contribution to the final prediction is scaled by a small factor (called \emph{shrinkage} or the \emph{learning rate}) -- for example, 0.1 -- so no single tree can push the prediction too far.
 Together, these controls reduce the risk that the ensemble memorizes the training data~\parencite{gradientboosting}.
 
-Moreover, another limitation is that decision trees require a \emph{flat feature vector} as input and cannot natively handle tree-structured data like query plans.
+Another limitation is that decision trees require a \emph{flat feature vector} as input and cannot natively handle tree-structured data like query plans.
 Additionally, because possible prediction values are bounded by the number of leaves, a single decision tree struggles to predict accurately over a very wide range of target values~\parencite{t3}.
 Both of these limitations must be addressed through careful design, which T3 applies as described in the next subsection.
 
@@ -423,4 +408,7 @@ This concerns plan selection, not runtime prediction accuracy, and is therefore 
 For example, in our evaluation, PostgreSQL's built-in estimator achieves a median Q-Error of over 1000 for runtime prediction, far worse than all learned models.
 
 Our thesis focuses on prediction accuracy rather than plan selection, and this work confirms that prediction quality remains a meaningful and open research problem.
+
+Across this landscape, this thesis occupies a specific gap.
+None of the above works address whether T3's pipeline-based, decision tree approach -- designed for a compiled execution system -- transfers to an iterator-based system such as PostgreSQL, where pipelines are not a native execution concept.
 

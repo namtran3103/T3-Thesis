@@ -90,9 +90,10 @@ Our feature vector differs from the original T3 feature vector in the following 
   \item \textbf{PostgreSQL-native operator features.} The \texttt{parsed\_plans} expose PostgreSQL-native operator nodes. 
   Thus, we add entries for these PostgreSQL-specific operators in the feature vector.
   
-  Regarding stages, T3's stage assignment is derived from Umbra-specific operator types and pipeline positions.
-  There is no direct equivalent mapping for PostgreSQL operators.
-  Hence, we decide against rewriting this logic entirely for PG and do not include stage-based features.
+  Regarding stages, T3 derives stage assignments (Scan, Build, Probe, PassThrough) from Umbra-specific operator types and their position within the pipeline.
+  In PostgreSQL, however, this information is already encoded in the node type itself.
+  Where Umbra represents both phases of a hash join as a single \texttt{HashJoin} operator appearing in two separate pipelines with different stages, PostgreSQL exposes them as two distinct plan nodes -- a \texttt{Hash} node for the build side and a \texttt{Hash Join} node for the probe side.
+  A stage feature is therefore redundant in the PostgreSQL representation, and we omit it accordingly.
   Instead, we aggregate features only per operator.
   \item \textbf{PostgreSQL planner cost estimates.} We include sums and extrema of PostgreSQL's \texttt{est\_cost} and \texttt{est\_startup\_cost} from \texttt{plan\_parameters} in the feature vector.
   These are optimizer-internal estimates of work and startup cost and are an additional PostgreSQL-specific signal that is not available in the Umbra feature vector.

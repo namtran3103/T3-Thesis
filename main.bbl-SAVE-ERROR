@@ -77,13 +77,13 @@
       \field{sortinit}{2}
       \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labeltitlesource}{title}
-      \field{title}{{PostgreSQL} 16 Documentation: How the Planner Uses Statistics}
-      \field{year}{2024}
+      \field{title}{{PostgreSQL} 18 Documentation: How the Planner Uses Statistics}
+      \field{year}{2025}
       \verb{urlraw}
-      \verb https://www.postgresql.org/docs/16/planner-stats-details.html
+      \verb https://www.postgresql.org/docs/18/planner-stats-details.html
       \endverb
       \verb{url}
-      \verb https://www.postgresql.org/docs/16/planner-stats-details.html
+      \verb https://www.postgresql.org/docs/18/planner-stats-details.html
       \endverb
     \endentry
     \entry{zeroshot}{article}{}{}
@@ -136,7 +136,7 @@
       \verb https://doi.org/10.14778/3551793.3551799
       \endverb
     \endentry
-    \entry{stage}{inproceedings}{}{}
+    \entry{stage}{article}{}{}
       \name{author}{10}{}{%
         {{un=0,uniquepart=base,hash=bf28ed81f67fcc7d8c1aba5160586e4e}{%
            family={Wu},
@@ -186,11 +186,11 @@
            given={Mohammad},
            giveni={M\bibinitperiod},
            givenun=0}}%
-        {{un=0,uniquepart=base,hash=05bd9d4866d4c36becf9db726f6d4c23}{%
+        {{un=0,uniquepart=base,hash=65fa71795da23171a550495c07a94f81}{%
            family={Narayanaswamy},
            familyi={N\bibinitperiod},
-           given={Balakrishnan},
-           giveni={B\bibinitperiod},
+           given={Murali},
+           giveni={M\bibinitperiod},
            givenun=0}}%
         {{un=0,uniquepart=base,hash=06236ad5a15ffd4505a97a20555a384b}{%
            family={Kraska},
@@ -199,28 +199,25 @@
            giveni={T\bibinitperiod},
            givenun=0}}%
       }
-      \list{publisher}{1}{%
-        {ACM}%
-      }
       \strng{namehash}{35f099d462f7e4cb8417e6073bcacf37}
-      \strng{fullhash}{05895eea2c787cc30ee7e634b4936e48}
-      \strng{fullhashraw}{05895eea2c787cc30ee7e634b4936e48}
-      \strng{bibnamehash}{05895eea2c787cc30ee7e634b4936e48}
-      \strng{authorbibnamehash}{05895eea2c787cc30ee7e634b4936e48}
+      \strng{fullhash}{55b4012d49aa4c3b0e380b4d22aefd9e}
+      \strng{fullhashraw}{55b4012d49aa4c3b0e380b4d22aefd9e}
+      \strng{bibnamehash}{55b4012d49aa4c3b0e380b4d22aefd9e}
+      \strng{authorbibnamehash}{55b4012d49aa4c3b0e380b4d22aefd9e}
       \strng{authornamehash}{35f099d462f7e4cb8417e6073bcacf37}
-      \strng{authorfullhash}{05895eea2c787cc30ee7e634b4936e48}
-      \strng{authorfullhashraw}{05895eea2c787cc30ee7e634b4936e48}
+      \strng{authorfullhash}{55b4012d49aa4c3b0e380b4d22aefd9e}
+      \strng{authorfullhashraw}{55b4012d49aa4c3b0e380b4d22aefd9e}
       \field{sortinit}{4}
       \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{booktitle}{Companion of the 2024 International Conference on Management of Data (SIGMOD)}
-      \field{title}{Stage: Query Execution Time Prediction in {Amazon Redshift}}
+      \field{title}{Stage: Query execution time prediction in Amazon Redshift}
       \field{year}{2024}
-      \field{pages}{280\bibrangedash 294}
-      \range{pages}{15}
-      \verb{doi}
-      \verb 10.1145/3626246.3653396
+      \verb{urlraw}
+      \verb https://www.amazon.science/publications/stage-query-execution-time-prediction-in-amazon-redshift
+      \endverb
+      \verb{url}
+      \verb https://www.amazon.science/publications/stage-query-execution-time-prediction-in-amazon-redshift
       \endverb
     \endentry
     \entry{dbengines}{manual}{}{}
@@ -262,7 +259,7 @@
       \field{labeltitlesource}{title}
       \field{journaltitle}{IEEE Transactions on Knowledge and Data Engineering}
       \field{number}{1}
-      \field{title}{Volcano---{A}n Extensible and Parallel Query Evaluation System}
+      \field{title}{Volcano--{A}n Extensible and Parallel Query Evaluation System}
       \field{volume}{6}
       \field{year}{1994}
       \field{pages}{120\bibrangedash 135}
@@ -315,13 +312,13 @@
       \field{sortinit}{1}
       \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labeltitlesource}{title}
-      \field{title}{{PostgreSQL} 16 Documentation: The Path of a Query}
-      \field{year}{2024}
+      \field{title}{{PostgreSQL} 18 Documentation: The Path of a Query}
+      \field{year}{2025}
       \verb{urlraw}
-      \verb https://www.postgresql.org/docs/16/query-path.html
+      \verb https://www.postgresql.org/docs/18/query-path.html
       \endverb
       \verb{url}
-      \verb https://www.postgresql.org/docs/16/query-path.html
+      \verb https://www.postgresql.org/docs/18/query-path.html
       \endverb
     \endentry
     \entry{lightgbm}{inproceedings}{}{}
@@ -657,8 +654,8 @@
       \strng{authornamehash}{3ae53fe582e8a815b118d26947eaa326}
       \strng{authorfullhash}{3ae53fe582e8a815b118d26947eaa326}
       \strng{authorfullhashraw}{3ae53fe582e8a815b118d26947eaa326}
-      \field{sortinit}{4}
-      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{title}{Deep Learning}
@@ -834,8 +831,8 @@
       \strng{authornamehash}{0fd788250a2bc43bdb32336f6efda1bd}
       \strng{authorfullhash}{0fd788250a2bc43bdb32336f6efda1bd}
       \strng{authorfullhashraw}{0fd788250a2bc43bdb32336f6efda1bd}
-      \field{sortinit}{5}
-      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{title}{Classification and Regression Trees}
@@ -858,8 +855,8 @@
       \strng{authornamehash}{ce884cc144616c39e723a8fe2eb3c879}
       \strng{authorfullhash}{ce884cc144616c39e723a8fe2eb3c879}
       \strng{authorfullhashraw}{ce884cc144616c39e723a8fe2eb3c879}
-      \field{sortinit}{5}
-      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{The Annals of Statistics}
@@ -928,12 +925,19 @@
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Real-Time Database Systems: Issues and Applications}
+      \field{isbn}{978-1-4615-6161-3}
       \field{title}{Cost Model Development for a Main Memory Database System}
       \field{year}{1997}
       \field{pages}{139\bibrangedash 162}
       \range{pages}{24}
       \verb{doi}
-      \verb 10.1007/978-1-4615-6277-3_8
+      \verb 10.1007/978-1-4615-6161-3_10
+      \endverb
+      \verb{urlraw}
+      \verb https://doi.org/10.1007/978-1-4615-6161-3_10
+      \endverb
+      \verb{url}
+      \verb https://doi.org/10.1007/978-1-4615-6161-3_10
       \endverb
     \endentry
     \entry{manegold}{inproceedings}{}{}
@@ -1212,8 +1216,8 @@
       \strng{authornamehash}{b08564f393d1e3b019be55eabf142f0a}
       \strng{authorfullhash}{c4232c3d05fda09f51b10abd09c4788b}
       \strng{authorfullhashraw}{c4232c3d05fda09f51b10abd09c4788b}
-      \field{sortinit}{8}
-      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Proc. VLDB Endow.}
@@ -1397,13 +1401,13 @@
       \field{sortinit}{1}
       \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labeltitlesource}{title}
-      \field{title}{{PostgreSQL} 16 Documentation: System Catalogs -- {pg\_class}}
-      \field{year}{2024}
+      \field{title}{{PostgreSQL} 18 Documentation: System Catalogs -- {pg\_class}}
+      \field{year}{2025}
       \verb{urlraw}
-      \verb https://www.postgresql.org/docs/16/catalog-pg-class.html
+      \verb https://www.postgresql.org/docs/18/catalog-pg-class.html
       \endverb
       \verb{url}
-      \verb https://www.postgresql.org/docs/16/catalog-pg-class.html
+      \verb https://www.postgresql.org/docs/18/catalog-pg-class.html
       \endverb
     \endentry
     \entry{postgresql_docs_explain}{manual}{}{}
@@ -1413,13 +1417,13 @@
       \field{sortinit}{1}
       \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labeltitlesource}{title}
-      \field{title}{{PostgreSQL} 16 Documentation: {EXPLAIN}}
-      \field{year}{2024}
+      \field{title}{{PostgreSQL} 18 Documentation: {Explain}}
+      \field{year}{2025}
       \verb{urlraw}
-      \verb https://www.postgresql.org/docs/16/sql-explain.html
+      \verb https://www.postgresql.org/docs/18/sql-explain.html
       \endverb
       \verb{url}
-      \verb https://www.postgresql.org/docs/16/sql-explain.html
+      \verb https://www.postgresql.org/docs/18/sql-explain.html
       \endverb
     \endentry
   \enddatalist
