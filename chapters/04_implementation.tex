@@ -73,7 +73,7 @@
     \draw[-latex, thick] (scan) -- (hash);
   \end{tikzpicture}
   }
-  \caption[Top-node cutout with Hash Join]{Top-node tree cutout of one \texttt{parsed\_plan} with a \texttt{Hash Join} from \path{credit/workload_100k_s1_c8220}. Child relationships are shown by arrows,
+  \caption[Top-node Cutout with Hash Join from ZeroShot Data]{Top-node tree cutout of one \texttt{parsed\_plan} with a \texttt{Hash Join} from \path{credit/workload_100k_s1_c8220}. Child relationships are shown by arrows,
    and each node box contains selected \texttt{plan\_parameters} of that node for the displayed cutout.}
   \label{fig:parsed-plan-hash-join-cutout}
 \end{figure}
@@ -169,7 +169,7 @@ Each pipeline's feature vector consists of two concatenated blocks, as Figure~\r
     \multicolumn{2}{@{}c@{}}{\scriptsize\textit{(remaining operator-type entries omitted)}} \\
     \bottomrule
   \end{tabular}
-  \caption[Excerpt of a PostgreSQL-native pipeline feature vector]
+  \caption[Excerpt of a PostgreSQL-native Pipeline Feature Vector]
   {Excerpts of the pipeline-level block (first twelve features) and of the \texttt{Nested\_Loop} operator entries in the operator-type block.
   They are from one pipeline of query \texttt{index\_workload\_100k\_s2\_c8220\_890} on the TPC-H database.
   The full vector has 153 dimensions; remaining pipeline and operator entries are omitted.}

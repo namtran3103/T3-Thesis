@@ -1010,8 +1010,8 @@
       \strng{authornamehash}{9ba8bad2bae1453f8c935762a5c98d1f}
       \strng{authorfullhash}{9ba8bad2bae1453f8c935762a5c98d1f}
       \strng{authorfullhashraw}{9ba8bad2bae1453f8c935762a5c98d1f}
-      \field{sortinit}{8}
-      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Proceedings of the 5th International Conference on Autonomic Computing (ICAC)}
@@ -1079,8 +1079,8 @@
       \strng{authornamehash}{8208a56449ca40569bc5f01889b120f2}
       \strng{authorfullhash}{960ef470b15733e36bbb6b20dab8978a}
       \strng{authorfullhashraw}{960ef470b15733e36bbb6b20dab8978a}
-      \field{sortinit}{8}
-      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Proceedings of the 25th International Conference on Data Engineering (ICDE)}
@@ -1139,8 +1139,8 @@
       \strng{authornamehash}{f0dd18472a1b6fb6975629de26a41701}
       \strng{authorfullhash}{64b0e7d883914def37d4fa46faf36b44}
       \strng{authorfullhashraw}{64b0e7d883914def37d4fa46faf36b44}
-      \field{sortinit}{8}
-      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{9th Conference on Innovative Data Systems Research (CIDR)}
@@ -1280,8 +1280,8 @@
       \strng{authornamehash}{bde105eeb8f77339773f8ea581d6ee76}
       \strng{authorfullhash}{653b8797067d9a4922763ab3dcc6b7cd}
       \strng{authorfullhashraw}{653b8797067d9a4922763ab3dcc6b7cd}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{2024 IEEE 40th International Conference on Data Engineering (ICDE)}
@@ -1323,8 +1323,8 @@
       \strng{authornamehash}{8fb200168c09029e376c04b61b6889cc}
       \strng{authorfullhash}{8fb200168c09029e376c04b61b6889cc}
       \strng{authorfullhashraw}{8fb200168c09029e376c04b61b6889cc}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Proc. VLDB Endow.}
@@ -1379,8 +1379,8 @@
       \strng{authornamehash}{e467a93bea5cf31f8c085827b3e0904e}
       \strng{authorfullhash}{97bf1a15e95c4871283ae27b6840ca1b}
       \strng{authorfullhashraw}{97bf1a15e95c4871283ae27b6840ca1b}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Proc. ACM Manag. Data}

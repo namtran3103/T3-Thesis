@@ -91,14 +91,14 @@ Thus, it is still is a good starting point.
 \begin{figure}[htpb]
   \centering
   \includegraphics[width=0.7\textwidth]{figures/57th_comparison.png}
-  \caption[57th-Best Q-Error Comparison]{57th-best Q-Error on the Join Order Benchmark for T3 (Umbra), ZeroShot, and our model.
+  \caption[57th-best Q-Error Comparison between T3 (Umbra), ZeroShot, and Our Model]{57th-best Q-Error on the Join Order Benchmark for T3 (Umbra), ZeroShot, and our model.
   Values for T3 (Umbra) and ZeroShot are taken from Rieger \& Neumann ~\parencite{t3}}\label{fig:57th_comparison}
 \end{figure}
 
 \begin{figure}[htpb]
   \centering
   \includegraphics[width=0.7\textwidth]{figures/avg_comparison.png}
-  \caption[Average Q-Error Comparison]{Average Q-Error on the Join Order Benchmark for T3 (Umbra), ZeroShot, and our model.
+  \caption[Average Q-Error Comparison between T3 (Umbra), ZeroShot, and Our Model]{Average Q-Error on the Join Order Benchmark for T3 (Umbra), ZeroShot, and our model.
   Values for T3 (Umbra) and ZeroShot are taken from Rieger \& Neumann~\parencite{t3}.
   Our model's average is calculated over 77 instead of 113 queries.}\label{fig:avg_comparison}
 \end{figure}
@@ -116,7 +116,7 @@ Hence, we demonstrate the relevance of PostgreSQL-native features.
 \begin{figure}[htpb]
   \centering
   \includegraphics[width=0.7\textwidth]{figures/plot_comp_wehrstein.png}
-  \caption[57th-Best Q-Error: Our Implementation vs.\ T3 for PostgreSQL]{57th-best Q-Error on the Join Order Benchmark. Our model against T3 adapted for PostgreSQL by Wehrstein et al~\parencite{jobcomplex}. Estimated cardinalities. }\label{fig:comp_wehrstein}
+  \caption[57th-Best Q-Error: Our Implementation vs.\ T3 for PostgreSQL by Wehrstein et al.]{57th-best Q-Error on the Join Order Benchmark. Our model against T3 adapted for PostgreSQL by Wehrstein et al~\parencite{jobcomplex}. Estimated cardinalities. }\label{fig:comp_wehrstein}
 \end{figure}
 
 
@@ -152,7 +152,7 @@ Regarding learned approaches, not only neural networks can perform, but also dec
     Our model & 2.42 \\
     \bottomrule
   \end{tabular}
-  \caption[Median Q-Error on JOB]{Median Q-Error on the Join Order Benchmark (JOB) across different models, data from Wehrstein et al.~\parencite{jobcomplex}. Our model reports the 57th-best (p75) Q-Error value, matching the median of the other models. Estimated cardinalities. }\label{tab:median_qerror_job}
+  \caption[Median Q-Error on JOB across different Models]{Median Q-Error on the Join Order Benchmark (JOB) across different models, data from Wehrstein et al.~\parencite{jobcomplex}. Our model reports the 57th-best (p75) Q-Error value, matching the median of the other models. Estimated cardinalities. }\label{tab:median_qerror_job}
 \end{table}
 
 \section{Ablation Study}\label{sec:evaluation_ablation}
@@ -186,7 +186,7 @@ and improvements in cardinality estimation would directly benefit performance pr
 \begin{figure}[htpb]
   \centering
   \includegraphics[width=\textwidth]{figures/card_comparison.png}
-  \caption[Cardinality Mode Comparison]{Q-Error (p50, p90, and average) over all queries under three cardinality settings: trained and evaluated on exact cardinalities, trained on exact but evaluated on estimated cardinalities, and trained and evaluated on estimated cardinalities.}\label{fig:card_comparison}
+  \caption[Actual and Estimated Cardinality Comparison]{Q-Error (p50, p90, and average) over all queries under three cardinality settings: trained and evaluated on exact cardinalities, trained on exact but evaluated on estimated cardinalities, and trained and evaluated on estimated cardinalities.}\label{fig:card_comparison}
 \end{figure}
 
 
@@ -273,6 +273,6 @@ the per-tuple decomposition provides no accuracy benefit and introduces addition
 \begin{figure}[htpb]
   \centering
   \includegraphics[width=\textwidth]{figures/query_runtime_hist.png}
-  \caption[Query Running Time Distribution]{Distribution of all query running times of the ZeroShot dataset.}\label{fig:query_runtime_hist}
+  \caption[Query Runtime Distribution]{Distribution of all query running times of the ZeroShot dataset.}\label{fig:query_runtime_hist}
 \end{figure}
 
