@@ -34,8 +34,8 @@ To answer this, we adapt T3 for PostgreSQL using the public ZeroShot benchmark d
 We convert parsed PostgreSQL execution plans into T3's pipeline representation and construct a PostgreSQL-native feature vector.
 We then train and evaluate a LightGBM model~\parencite{lightgbm} on a leave-one-database-out split to test generalization across unseen database instances.
 
-Our results show that the adapted model generalizes well.
-Furthermore, on the Join Order Benchmark, our model outperforms an earlier T3-based PostgreSQL implementation by Wehrstein et al.~\parencite{jobcomplex}, demonstrating the importance of PostgreSQL-native features.
+Our results show that the adapted model generalizes well within the ZeroShot benchmark workload.
+Furthermore, on the Join Order Benchmark, our model outperforms an earlier T3-based PostgreSQL implementation by Wehrstein et al.~\parencite{jobcomplex}, indicating the relevance of a PostgreSQL-native feature vector.
 
 Compared to a broader set of learned cost models, our model ranks among the top performers, achieving a median Q-Error of 2.42.
 However, it still falls behind state-of-the-art neural network models and T3 (Umbra).

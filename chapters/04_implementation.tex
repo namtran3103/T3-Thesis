@@ -101,7 +101,7 @@ but are available for the per-pipeline and per-tuple prediction variants evaluat
 \section{Feature Vector Construction}
 
 As PostgreSQL plans contain different data, we use \texttt{pg\_features.py} to construct the feature vector for each pipeline after the pipeline decomposition.
-Subsequently, the \texttt{plan\_parameters} are kept in the converted tree (\texttt{pg} payload entry), as we use them for the feature extraction.
+Therefore, the \texttt{plan\_parameters} are kept in the converted tree (\texttt{pg} payload entry) for feature extraction.
 
 Each pipeline's feature vector consists of two concatenated blocks, as Figure~\ref{fig:pg-feature-vector-snippet} shows:
 
@@ -127,14 +127,15 @@ Each pipeline's feature vector consists of two concatenated blocks, as Figure~\r
   \texttt{pg\_pipeline\_num\_ops} for instance.
   \item \textbf{Operator-level block.}
   For every operator that occurs in \texttt{parsed\_plans}, we assign a slice in the feature vector.
-  If multiple operators of the same type occur in the pipeline, we sum the features over all occurences.
+  If multiple operators of the same type occur in the pipeline, we sum the features over all occurrences.
   In Figure~\ref{fig:pg-feature-vector-snippet}, the excerpt of the operator-type block for the \texttt{Nested\_Loop join} operator is depicted.
 
   Depending on the operator type, we include different features. This feature set is derived from T3's Umbra implementation~\parencite{t3}.
   For example, a join would include different features than a scan, like in the Umbra/T3 approach.
 
   Regarding the calculations of the features, we follow the Umbra/T3 implementation where adequate.
-  A deviation would be, e.\,g., how expression percentages are formed due to the different nature of PostgreSQL's filter predicates (CITE).
+  A deviation would be, e.\,g., how expression percentages are formed due to the different nature of PostgreSQL's filter predicates.
+  Thus, they are represented as a structured predicate tree in the \texttt{filter\_columns} field of the ZeroShot \texttt{parsed\_plans} format~\parencite{zeroshot}.
 
   Finally, we include the operator count ``\texttt{const}'', which exists for every operator type in both our and the Umbra/T3 implementation~\parencite{t3}.
 \end{enumerate}

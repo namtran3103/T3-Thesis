@@ -10,9 +10,9 @@ We adapted T3 for PostgreSQL by converting parsed ZeroShot execution plans into 
 The feature vector includes PostgreSQL-specific signals such as planner cost estimates and planned parallelism alongside operator-level features derived from T3's Umbra design.
 We trained a LightGBM model with a leave-one-database-out split, mirroring both T3's and ZeroShot's generalization evaluation.
 
-The model generalizes reliably across unseen PostgreSQL database instances, with a median Q-Error below 1.33 across all 20 ZeroShot databases.
+The model generalizes reliably across unseen PostgreSQL database instances within the ZeroShot workload, with a median Q-Error below 1.33 across all 20 ZeroShot databases.
 On the Join Order Benchmark, it clearly outperforms the T3-based PostgreSQL implementation of Wehrstein et al.~\parencite{jobcomplex}.
-Consequently, this confirms that a PostgreSQL-native feature vector is beneficial.
+Hence, this result suggests that a PostgreSQL-native feature vector is beneficial.
 Among all learned cost models evaluated on JOB, our model ranks 4th with a median Q-Error of 2.42.
 This is well ahead of most learned approaches and far better than PostgreSQL's built-in estimator at over 1000.
 However, it falls behind SOTA neural network models such as ZeroShot (1.58) and DACE (1.91), and behind T3 (Umbra).
@@ -25,7 +25,7 @@ PostgreSQL's iterator model causes per-node timing intervals to overlap across p
 Per-query prediction therefore works best -- the opposite of T3's finding for Umbra.
 
 Finally, a promising path to closing the gap to T3 (Umbra) and other SOTA models is a dedicated PostgreSQL benchmark covering a wider range of query types and runtimes.
-Subsequently, the per-tuple approach could be re-evaluated, especially with future work concerning the pipeline timing issue.
+With such a benchmark, the per-tuple approach could be re-evaluated, especially regarding the pipeline timing issue.
 A purely query-level feature vector -- bypassing pipeline decomposition -- could also be investigated.
 Moreover, prediction latency should also be benchmarked and potentially improved through native code compilation using the \texttt{lleaves} framework~\parencite{t3}.
 

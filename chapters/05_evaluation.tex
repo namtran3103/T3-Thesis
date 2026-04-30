@@ -3,7 +3,7 @@
 
 \chapter{Evaluation}\label{chapter:evaluation}
 
-We provide an evaluation of the performance of our model and compare it to other work.
+We evaluate our model's performance and compare it to other work.
 This answers the three research questions posed in Chapter~\ref{chapter:introduction}: how accurately a decision tree model predicts PostgreSQL query runtimes, which of T3's key concepts transfer effectively, and how competitive the result is against existing learned cost models.
 Unless otherwise noted due to the nature of the evaluation, all results are evaluated on actual cardinalities.
 Therefore, we detach our results from the ongoing issue of accurately estimating cardinalities~\parencite{leis2018job}.
@@ -25,8 +25,9 @@ p90 ranges from 1.30 (Walmart) to 3.32 (Basketball),
 and the average from 1.13 (Walmart) to 2.92 (Hepatitis).
 This reflects that a small number of harder-to-predict queries
 drive up the tail and mean errors for some databases.
-Despite the increased variation in the average and p90 values, we conclude that the model is able to generalize across unseen database instances.
-This finding applies to the queries of the ZeroShot training data we used.
+Despite the increased variation in the average and p90 values, we conclude that the model can generalize across unseen database instances within the ZeroShot workload.
+We scope this finding to the ZeroShot query pattern~\parencite{zeroshot}.
+Generalization to more structurally diverse queries remains untested and is addressed in the future work (Chapter~\ref{chapter:future_work}).
 
 Since we trained on the same data as the ZeroShot model, it is reasonable to compare the median values of our model to theirs.
 As their median values across databases are in the same range~\parencite{zeroshot}, we infer that our model has a comparable generalization performance.
@@ -86,13 +87,13 @@ To further narrow down the comparison, we also include the average Q-Error value
 Although we only have 70\% of the queries available for the calculation on our model, we still see a notable trend. 
 Decision trees like T3 offer SOTA performance on average for Umbra, followed by ZeroShot.
 Our model, a T3-based implementation for PostgreSQL, tends to perform worse, but the difference on average is smaller than on percentiles.
-Thus, it is still is a good starting point.
+Thus, it is still a good starting point.
 
 \begin{figure}[htpb]
   \centering
   \includegraphics[width=0.7\textwidth]{figures/57th_comparison.png}
   \caption[57th-best Q-Error Comparison between T3 (Umbra), ZeroShot, and Our Model]{57th-best Q-Error on the Join Order Benchmark for T3 (Umbra), ZeroShot, and our model.
-  Values for T3 (Umbra) and ZeroShot are taken from Rieger \& Neumann ~\parencite{t3}}\label{fig:57th_comparison}
+  Values for T3 (Umbra) and ZeroShot are taken from Rieger \& Neumann~\parencite{t3}}\label{fig:57th_comparison}
 \end{figure}
 
 \begin{figure}[htpb]
@@ -123,22 +124,24 @@ Hence, we demonstrate the relevance of PostgreSQL-native features.
 
 \paragraph{Further PostgreSQL Prediction Models.}
 
-Table~\ref{tab:median_qerror_job} shows the median Q-Error values for different learned cost models on the JOB-Benchmark using PostgreSQL and estimated cardinalities.
-Once again, we use the 57th-best (p75) Q-Error value for the comparison with our model.
+Table~\ref{tab:median_qerror_job} shows the 57th-best Q-Error for different learned cost models on the JOB-Benchmark using PostgreSQL and estimated cardinalities.
+As established earlier, we use the 57th-best Q-Error as the comparison metric.
+For models evaluated on all 113 JOB queries, the 57th-best value equals the median (p50).
+On the other hand, for our model, which has access to only 77 queries, the 57th-best value corresponds to p75 and is therefore a conservative lower bound for our true median.
 
-Here, the best performing models are neural networks like ZeroShot ~\parencite{zeroshot} and DACE ~\parencite{dace}, having a median Q-Error below 2.
-Our model is in the top 4, coming in at 2.42, even when using a worst-case-scenario.
+Here, the best performing models are neural networks like ZeroShot~\parencite{zeroshot} and DACE~\parencite{dace}, with a 57th-best Q-Error below 2.
+Our model is in the top 4, coming in at 2.42, even under this worst-case comparison.
 The remaining models are neural network-based estimators, such as QPPNet~\parencite{qppnet}.
-They show a significant accuracy gap to the top performers, with median Q-Errors ranging from 8 to 18.
-Finally, PostgreSQL's untrained, built-in cost estimator performs worst by a very large margin at a median Q-Error of over 1000, confirming the need for learned approaches.
-Regarding learned approaches, not only neural networks can perform, but also decision trees like T3 for PostgreSQL.
+They show a significant accuracy gap to the top performers, with 57th-best Q-Errors ranging from 8 to 18.
+Finally, PostgreSQL's untrained, built-in cost estimator performs worst by a very large margin at a 57th-best Q-Error of over 1000, confirming the need for learned approaches.
+Regarding learned approaches, not only neural networks can perform well, but also decision trees like T3 for PostgreSQL.
 
 
 \begin{table}[htpb]
   \centering
   \begin{tabular}{lc}
     \toprule
-    \textbf{Model} & \textbf{Median Q-Error} \\
+    \textbf{Model} & \textbf{57th-best Q-Error} \\
     \midrule
     Postgres (v16)  & 1015.67 \\
     DACE            & 1.91    \\
@@ -149,10 +152,10 @@ Regarding learned approaches, not only neural networks can perform, but also dec
     QPPNet          & 17.50   \\
     QueryFormer     & 8.30    \\
     ZeroShot        & \textbf{1.58}    \\
-    Our model & 2.42 \\
+    Our model       & 2.42    \\
     \bottomrule
   \end{tabular}
-  \caption[Median Q-Error on JOB across different Models]{Median Q-Error on the Join Order Benchmark (JOB) across different models, data from Wehrstein et al.~\parencite{jobcomplex}. Our model reports the 57th-best (p75) Q-Error value, matching the median of the other models. Estimated cardinalities. }\label{tab:median_qerror_job}
+  \caption[57th-best Q-Error on JOB across different Models]{57th-best Q-Error on the Join Order Benchmark (JOB) across different models, data from Wehrstein et al.~\parencite{jobcomplex}. For all models except ours, this equals the median (p50), as they are evaluated on the full 113 JOB queries. Our model is evaluated on 77 queries, so its 57th-best value corresponds to p75 -- a conservative lower bound for its true median. Estimated cardinalities.}\label{tab:median_qerror_job}
 \end{table}
 
 \section{Ablation Study}\label{sec:evaluation_ablation}
@@ -195,7 +198,7 @@ and improvements in cardinality estimation would directly benefit performance pr
 Figure~\ref{fig:query_pipeline_tuple} compares Q-Error across three prediction granularities:
 per-query, per-pipeline, and per-tuple.
 This directly copies the evaluation of Rieger and Neumann~\parencite{t3},
-who find that finer granularities consistently improve accuracy —-
+who find that finer granularities consistently improve accuracy --
 with per-tuple being best and per-query being worst.
 We observe the opposite: the per-query model achieves the lowest Q-Error across all three metrics,
 while per-pipeline and per-tuple models perform noticeably worse.
@@ -249,7 +252,7 @@ Pipeline P1 (table scan, join) is recorded from $t = 0$ms to $t = 2{,}185$ms,
 giving a span of 2{,}185ms.
 P0 is entirely nested inside P1's time window,
 so the raw spans already sum to 3{,}395ms against an actual query time of 2{,}239ms.
-The correction factor of rescales both pipeline times so their sum is correct on a query level,
+The correction factor rescales both pipeline times so their sum is correct on a query level,
 but it cannot determine how much of the 2{,}239ms truly belongs to P0 versus P1.
 
 The per-tuple approach, which divides the pipeline runtime into per-tuple runtimes, is additionally weakened by a difference in dataset characteristics.
@@ -261,7 +264,7 @@ Hence, normalizing by tuple count compresses the prediction target and improves 
 However, in our PostgreSQL dataset, query execution times span a much narrower range,
 as visible in Figure~\ref{fig:query_runtime_hist}.
 
-Subsequently, with a narrower range and per-pipeline targets that are already noisy,
+With a narrower range and per-pipeline targets that are already noisy,
 the per-tuple decomposition provides no accuracy benefit and introduces additional label inaccuracies instead.
 
 \begin{figure}[htpb]

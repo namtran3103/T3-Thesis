@@ -25,7 +25,7 @@ This includes \emph{SPAJ} (Select-Project-Aggregate-Join) queries with conjuncti
 Overall, the benchmark contains 20 databases with large variation in tables, columns, and foreign-key relationships \parencite{zeroshot}.
 
 Having this multitude of databases allows us to test the generalization capabilities of our model.
-Similar to the T3 paper~\parencite{t3}, we can train the model on all but one databases and test on the remaining one.
+Similar to the T3 paper~\parencite{t3}, we can train the model on all but one database and test on the remaining one.
 Moreover, as the widely used JOB workload is included, we can compare our performance predictions to other implementations later on.
 Further, PostgreSQL is the intended database system of our implementation, which avoids the effort of building a separate PostgreSQL benchmark.
 
@@ -73,14 +73,13 @@ Joins place the build side in one pipeline and keep the join together with the p
 We retain the pipeline decomposition for feature extraction rather than opting for a complete query-level feature vector for three reasons.
 By mirroring T3's pipeline-based feature design~\parencite{t3},
 we can use the same pipeline-centric features such as operator percentages, which are only well-defined within a pipeline boundary.
-Further, following T3's ablation study, which includes per-pipeline predictions, we are able to provide a more thorough comparison
-of prediction granularities in Section~\ref{sec:evaluation_ablation}.
+Further, following T3's ablation study, which includes per-pipeline predictions, we can compare prediction granularities more thoroughly in Section~\ref{sec:evaluation_ablation}.
 Finally, PostgreSQL-specific issues affect the per-pipeline and per-tuple approaches
 in our setting, as discussed in the evaluation (Section~\ref{sec:evaluation_ablation});
 the decomposition keeps the model extensible so that future work can address those issues.
 
 The original T3 feature mapper for Umbra builds a feature vector from execution phases within each pipeline (e.g.\ scan, build, probe phases) and from cardinalities and tuple sizes attached to those phases~\parencite{t3}.
-On the other hand,PostgreSQL plans contain different data and we construct the feature vector for each pipeline after the aforementioned pipeline decomposition.
+On the other hand, PostgreSQL plans contain different data, so we construct the feature vector for each pipeline after the pipeline decomposition described above.
 
 Once the feature vector is constructed, we can train the model.
 Our feature vector differs from the original T3 feature vector in the following ways:
@@ -91,7 +90,7 @@ Our feature vector differs from the original T3 feature vector in the following 
   \item \textbf{PostgreSQL-native operator features.} The \texttt{parsed\_plans} expose PostgreSQL-native operator nodes. 
   Thus, we add entries for these PostgreSQL-specific operators in the feature vector.
   
-  Regarding stages,T3's stage assignment is derived from Umbra-specific operator types and pipeline positions.
+  Regarding stages, T3's stage assignment is derived from Umbra-specific operator types and pipeline positions.
   There is no direct equivalent mapping for PostgreSQL operators.
   Hence, we decide against rewriting this logic entirely for PG and do not include stage-based features.
   Instead, we aggregate features only per operator.
@@ -105,7 +104,7 @@ Our feature vector differs from the original T3 feature vector in the following 
   giving a precise estimate of the tuple byte width.
   PostgreSQL provides a direct semantic equivalent: \texttt{est\_width},
   the planner's estimated average output row width in bytes per node.
-  Subsequently, we use \texttt{est\_width} as the tuple size for each operator.
+  We therefore use \texttt{est\_width} as the tuple size for each operator.
   The main difference to the Umbra approach is that \texttt{est\_width} is a pre-aggregated planner estimate
   rather than a sum of per-attribute type metadata.
 \end{enumerate}
@@ -116,7 +115,7 @@ Now with the PostgreSQL implementation, we miss out on the execution phase dimen
 Whereas not an equivalent substitute, we replace this information with a pipeline-level dimension and keep the operator-level features for the individual operators.
 The pipeline-level block produces additional metadata in a compact manner, e.g., by using averages and sums over operators.
 For instance, we consider planned parallelism, width, and cost estimates per pipeline and not per operator.
-Subsequently, the feature vector stays more compact.
+Thus, the feature vector stays more compact.
 
 Each pipeline's feature vector consists of two concatenated blocks: pipeline-level aggregates and an operator-level block.
 
@@ -157,7 +156,7 @@ Regarding the training data, we mirror T3's train/validation split.
 We sample 80\% of the training data for training and 20\% for validation~\parencite{t3}.
 The default seed used for shuffling the training data is 42.
 
-Concerning the train/test split, we match the training intention of the Zero-Shot benchmark~\parencite{zeroshot} and of T3's cross-instance evaluation~\parencite{t3}.
+Concerning the train/test split, we match the training intention of the ZeroShot benchmark~\parencite{zeroshot} and of T3's cross-instance evaluation~\parencite{t3}.
 Both aim to measure whether the trained model transfers to an unseen database instance.
 Thus, we use a leave-one-out split on the \texttt{parsed\_plan} files:
 one instance is held out as the test set and all other instances form the training data.

@@ -23,7 +23,7 @@ because the remaining queries exceed the 30\,s cutoff of the ZeroShot data~\pare
 Rieger and Neumann evaluated T3 on all 113 queries~\parencite{t3},
 making a direct like-for-like comparison on the full JOB benchmark impossible.
 
-Conseqeutively, building a dedicated PostgreSQL benchmark in the style of T3's Umbra benchmark
+Consequently, building a dedicated PostgreSQL benchmark in the style of T3's Umbra benchmark
 would close the query diversity gap and restore a full JOB comparison.
 
 The runtime distribution of the ZeroShot data is also considerably narrower than T3's Umbra training data~\parencite{t3}.
@@ -34,7 +34,7 @@ and our ablation study could not test this under comparable conditions (Section~
 Moreover, a data gap is the absence of tablescan input cardinalities in the \texttt{parsed\_plans}.
 Our implementation always sets this value to 1, and the model compensates via the many other features.
 The estimated row count per table is available in PostgreSQL's system catalog (\texttt{pg\_class.reltuples}~\parencite{postgresql_docs_pg_class}).
-Future wo should extend the data collection to record this information.
+Future work should extend the data collection to record this information.
 
 \section{Feature Vector Extensions}
 
@@ -48,7 +48,7 @@ from one where all nodes run in parallel.
 
 \paragraph{Purely query-level feature vector.}
 Per-query prediction outperforms per-pipeline and per-tuple prediction in our setting.
-Thererefore, a future direction is to design the feature vector directly at the query level,
+Therefore, a future direction is to design the feature vector directly at the query level,
 without the intermediate pipeline decomposition.
 This would further sidestep the PostgreSQL pipeline timing problem identified in the ablation study
 (Section~\ref{sec:evaluation_ablation}), while also simplifying the model pipeline.
@@ -60,13 +60,16 @@ and one summarizing the full query context.
 This gives the model information about how a pipeline relates to the rest of the query,
 which may improve per-pipeline runtime prediction.
 
-\paragraph{Impact of PostgreSQL cost estimates.}
+\paragraph{PostgreSQL-specific features.}
 We include PostgreSQL planner cost estimates (\texttt{est\_cost}, \texttt{est\_startup\_cost})
 as features.
 However, the ablation study confirms that the PostgreSQL cost estimator is highly inaccurate
 for complex queries (median Q-Error above 1000, see Table~\ref{tab:median_qerror_job}).
 A targeted ablation study that removes or replaces these planner-cost features
 could determine whether they help or hurt prediction accuracy.
+More broadly, to assess the importance of individual features,
+future work can use LightGBM's built-in feature importance scores
+to identify which of the 153 dimensions drive the model's predictions.
 
 
 \paragraph{Mitigating the pipeline timing issue.}
@@ -79,7 +82,7 @@ which causes intervals to overlap across pipeline boundaries.
 Hence, a thorough long-term approach would be to modify PostgreSQL's executor instrumentation to track exclusive CPU time per node directly.
 This would require extending the executor's timing hooks to subtract child contribution at collection time,
 giving ground-truth per-node exclusive times without any heuristic.
-Subsequently, this could serve as the basis for a dedicated benchmark that collects richer timing data than the current ZeroShot dataset provides.
+Such instrumentation could then serve as the basis for a dedicated benchmark that collects richer timing data than the current ZeroShot dataset provides.
 
 \section{Prediction Latency}
 

@@ -184,7 +184,7 @@ Consequently, these three statistics provide a comprehensive picture of a model'
 
 A \emph{cost model} is what the query optimizer uses to compare candidate execution plans and select the one it expects to be cheapest~\parencite{silberschatz2019}.
 It assigns a cost estimate to each plan based on operator types, estimated cardinalities, and table statistics such as column histograms.
-Subsequently, models that predict actual query execution time are also referred to as \emph{performance prediction models} or \emph{learned cost models}~\parencite{t3, zeroshot}.
+In this context, models that predict actual query execution time are also referred to as \emph{performance prediction models} or \emph{learned cost models}~\parencite{t3, zeroshot}.
 
 Traditional cost models consist of hand-crafted mathematical formulas that are built into the DBMS optimizer.
 PostgreSQL's built-in estimator is a representative example: it computes cost scores from table sizes, index properties, and planner statistics without ever observing real execution times~\parencite{postgresql_docs_planner_stats}.
@@ -306,7 +306,7 @@ For each stage and stream combination, T3 records up to three numerical features
   \item \textbf{Percentage.} The fraction of all tuples at the pipeline start that reach this point.
   \item \textbf{Size.} The size of a single tuple in bytes, used for materializing operators.
   T3 derives this from Umbra's \emph{IU} (information unit) list. It is a per-operator record of output attribute names, types, and byte widths.
-  Subsequently, T3 requires database schema information.
+  For this reason, T3 requires database schema information.
   \item \textbf{Cardinality.} The number of tuples in the stream, used for operators with nonlinear cost such as sorts or hash joins.
 \end{enumerate}
 The percentage feature is the most important one.
@@ -332,7 +332,7 @@ Additionally, the per-tuple times are log-transformed during training ($t' = -\l
 T3 generates its own training data by running 16 distinct query structures on Umbra across multiple database instances and recording the resulting pipeline execution times.
 It then trains a LightGBM ensemble of 200 gradient boosted trees on these records using the MAPE (Mean Absolute Percentage Error) objective.
 MAPE minimizes the average relative error across predictions rather than the absolute error.
-Subsequently, short and long pipelines contribute equally to training~\parencite{t3}.
+Thus, short and long pipelines contribute equally to training~\parencite{t3}.
 Following the zero-shot paradigm~\parencite{zeroshot}, T3 trains on all but one database instance and generalizes to the held-out one without any retraining~\parencite{t3}.
 
 After training, the model is compiled to native machine code via the \texttt{lleaves} framework, which converts each decision node to exactly one compare instruction and one branch instruction.
@@ -398,9 +398,8 @@ It leverages the accuracy of neural networks while improving latency through a m
 
 \textit{DACE}~\parencite{dace} is a database-agnostic cost estimator.
 It uses an attention-based neural network to encode query plans
-and is pre-trained across multiple databases.
-Subsequently, it can generalize to unseen database instances
-without re-training.
+and is pre-trained across multiple databases,
+which allows it to generalize to unseen database instances without re-training.
 
 \textit{TATA}~\parencite{tata} is a transfer learning framework for query plan representations.
 It transfers a representation trained on one task -- such as cost estimation -- to other tasks such as query optimization or index selection, reducing dataset collection cost by up to 5$\times$.
@@ -421,7 +420,7 @@ They evaluate join ordering, access path selection, and physical operator select
 Their key finding is that while LCMs outperform PostgreSQL's built-in estimator in cost estimation accuracy, this does not automatically translate into better plan selection.
 They find that high tail errors still cause poor plan choices in downstream optimization tasks.
 This concerns plan selection, not runtime prediction accuracy, and is therefore consistent with our results.
-For example, in our evaluation, PostgreSQL's built-in estimator achieves a median Q-error of over 1000 for runtime prediction, far worse than all learned models.
+For example, in our evaluation, PostgreSQL's built-in estimator achieves a median Q-Error of over 1000 for runtime prediction, far worse than all learned models.
 
 Our thesis focuses on prediction accuracy rather than plan selection, and this work confirms that prediction quality remains a meaningful and open research problem.
 

@@ -9,8 +9,8 @@ Its authors note that T3's concepts are transferable to other database systems -
 We adapt T3 for PostgreSQL by converting ZeroShot benchmark execution plans into T3's pipeline representation and constructing a PostgreSQL-native feature vector.
 The vector captures PostgreSQL-specific signals -- including planner cost estimates, planned parallelism, and operator-level features -- and is used to train a LightGBM model in a leave-one-database-out setup.
 
-Our model generalizes well across 20 unseen PostgreSQL database instances, achieving a median Q-Error below 1.33.
-On the Join Order Benchmark, it outperforms a prior T3-based PostgreSQL implementation and ranks 4th among all evaluated learned cost models with a median Q-Error of 2.42, demonstrating that a PostgreSQL-native feature vector is key.
+Our model generalizes well across 20 unseen PostgreSQL database instances within the ZeroShot workload, achieving a median Q-Error below 1.33.
+On the Join Order Benchmark, it outperforms a prior T3-based PostgreSQL implementation and ranks 4th among all evaluated learned cost models with a Q-Error of 2.42, indicating the relevance of a PostgreSQL-native feature vector.
 
 However, not all T3 concepts transfer equally.
 The pipeline-based representation carries over well and forms an effective basis for feature extraction.
