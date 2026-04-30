@@ -33,7 +33,7 @@ and our ablation study could not test this under comparable conditions (Section~
 
 Moreover, a data gap is the absence of tablescan input cardinalities in the \texttt{parsed\_plans}.
 Our implementation always sets this value to 1, and the model compensates via the many other features.
-The estimated row count per table is available in PostgreSQL's system catalog (\texttt{pg\_class.reltuples}~\parencite{postgresql_docs_pg_class}).
+The estimated row count per table is available in PostgreSQL's system catalog \parencite{postgresql_docs_pg_class}.
 Future work should extend the data collection to record this information.
 
 \section{Feature Vector Extensions}
