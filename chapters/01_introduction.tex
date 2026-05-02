@@ -16,7 +16,7 @@ Recent work shows that they substantially outperform hand-crafted models~\parenc
 Neural network approaches achieve high accuracy but suffer from high prediction latency~\parencite{stage}.
 
 Rieger and Neumann address this trade-off with T3 (Tuple Time Tree)~\parencite{t3}, a compiled gradient-boosted decision tree model for the Umbra database system.
-T3 achieves state-of-the-art accuracy while being orders of magnitude faster than neural network models.
+T3 achieves state-of-the-art (SOTA) accuracy while being orders of magnitude faster than neural network models.
 It relies on two core ideas: decomposing query plans into pipelines and predicting the per-tuple (per-row) execution time for each pipeline independently.
 Rieger and Neumann explicitly note that, while T3 is implemented for Umbra, its concepts are transferable to other database systems~\parencite{t3}.
 

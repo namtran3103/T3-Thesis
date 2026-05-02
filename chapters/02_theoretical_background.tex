@@ -73,17 +73,22 @@ This is one reason why more recent systems like Umbra take a different approach,
 
 \subsection{Compiled Query Execution (Umbra)}
 
-Umbra is a relational DBMS developed at the Technical University of Munich, designed for high performance on modern hardware as an evolution of the pure in-memory HyPer system~\parencite{umbra2020}.
-Unlike PG's interpreter-based approach, Umbra takes a fundamentally different execution strategy: it compiles each query plan into native machine code at query time~\parencite{umbra2020}.
+Umbra is a relational DBMS developed at the Technical University of Munich~\parencite{umbra2020}.
+It is an evolution of HyPer~\parencite{neumann2011, umbra2020}, an earlier TUM system, and inherits HyPer's two defining concepts.
+First, it compiles query plans into native machine code at query time.
+Second, it organizes execution around fused operators~\parencite{neumann2011}.
+On top of these inherited concepts, Umbra extends HyPer in two ways: it adds disk-based (SSD-backed) storage so that data can exceed main memory, and it introduces an adaptive compilation strategy~\parencite{umbra2020}.
 
-The motivation for this is to eliminate the per-tuple overhead of the iterator model.
+Regarding the compiled execution, its motivation is to eliminate the per-tuple overhead of the iterator model.
 Recall that in PG's pull-based execution, every single tuple causes a chain of \texttt{next()} calls to travel through the operator tree.
-This introduces substantial function call overhead and makes it difficult for the CPU to predict branches and keep data in cache.
+Therefore, this introduces substantial function call overhead.
 
 In a compiled system, these operator boundaries dissolve.
-For that, Umbra generates native code that fuses the logic of multiple consecutive operators into a single tight loop, pushing data forward through the code rather than pulling it upward through function calls~\parencite{neumann2011}.
-Moreover, Umbra employs an adaptive compilation strategy.
-Each step within a pipeline is first executed via a bytecode interpreter, and compilation to native machine code is triggered for parallel steps only when the expected benefit justifies the overhead~\parencite{umbra2020}.
+Umbra generates native code that fuses the logic of multiple consecutive operators into a single tight loop~\parencite{neumann2011}.
+Instead of pulling data upward through function calls, tuples flow forward through the fused code, representing a push-based execution model.
+
+The adaptive compilation strategy refines this further: each step within a pipeline is first executed via a bytecode interpreter.
+Then, compilation to native machine code is triggered for parallel steps only when the expected benefit justifies the overhead~\parencite{umbra2020}.
 
 Furthermore, a maximal sequence of operators that can be fused this way forms a natural execution unit.
 In the scan-filter-sort example from the previous subsection, the scan and filter are fused into one loop that writes qualifying tuples into a sort buffer.
@@ -98,9 +103,9 @@ The key structural concept that Umbra's compilation naturally exposes is the not
 The fused execution units described above are what are formally called \emph{pipelines} -- a central concept in compiled query execution and the structural basis of T3's prediction approach~\parencite{t3}.
 
 A \emph{pipeline} is a maximal sequence of operators that can process tuples in a fully streaming fashion, without any need to fully materialize an intermediate result.
-Within a pipeline, each tuple produced by the scan at the bottom flows immediately through all subsequent operators -- being filtered, transformed, or joined -- without waiting for any other tuple.
+Within a pipeline, each tuple produced at the bottom flows immediately through all subsequent operators -- being filtered, transformed, or joined -- without waiting for any other tuple.
 
-Moreover, a \emph{pipeline breaker} is an operator that interrupts this streaming flow, because it must see \emph{all} of its input before it can produce any output.
+Moreover, a \emph{pipeline breaker} is an operator that interrupts this streaming flow, because it must see all of its input before it can produce any output.
 The following are typical examples of pipeline breakers~\parencite{t3}:
 
 \begin{enumerate}
@@ -185,8 +190,8 @@ The following two subsections introduce the two main families of learned models 
 Neural networks are a class of machine learning models that learn to approximate functions from data by composing multiple layers of parameterized transformations.
 At each layer, the network takes a \emph{vector} -- a fixed-length array of numbers -- as input, multiplies it by a learned weight matrix, adds a bias, and applies a nonlinear activation function to produce a new vector.
 This new vector is then passed to the next layer as its input.
-By stacking many such layers, the network learns increasingly abstract \emph{representations} of the input: intermediate vectors that capture relevant patterns for the prediction task.
-The final layer produces the network's output -- in the case of performance prediction, a single predicted runtime value.
+By stacking many such layers, each layer's output vector becomes a more abstract summary of the input, encoding patterns relevant to the prediction task.
+The final layer then maps this summary to the network's output -- for performance prediction, a single predicted runtime value (regression).
 They are valued for their flexibility: given sufficient training data, they can capture highly nonlinear relationships between inputs and outputs~\parencite{deeplearning}.
 Hence, they are attractive for query performance prediction, where the relationship between a plan's structure and its execution time is complex and hardware-specific~\parencite{t3}.
 
@@ -268,9 +273,6 @@ Summing the six predictions yields the total predicted query time of 38\,ms.
 \paragraph{Pipeline-Based Representation.}
 T3 exploits the pipeline structure of Umbra's compiled execution model introduced in Section~\ref{sec:databases_and_query_execution}.
 Because Umbra already partitions query execution at pipeline breakers, each pipeline is a self-contained unit with a well-defined input cardinality, a fixed operator sequence, and a clear output.
-
-Therefore, T3 encodes each pipeline as a separate flat feature vector and predicts its execution time individually.
-The predicted query runtime is the sum of all pipeline times.
 This decomposition simplifies the prediction problem: instead of capturing the combined behavior of all operators at once, the model focuses on the specific characteristics of each pipeline~\parencite{t3}.
 
 \paragraph{Feature Vectors.}
@@ -291,7 +293,6 @@ For each stage and stream combination, T3 records up to three numerical features
   \item \textbf{Percentage.} The fraction of all tuples at the pipeline start that reach this point.
   \item \textbf{Size.} The size of a single tuple in bytes, used for materializing operators.
   T3 derives this from Umbra's \emph{IU} (information unit) list. It is a per-operator record of output attribute names, types, and byte widths.
-  For this reason, T3 requires database schema information.
   \item \textbf{Cardinality.} The number of tuples in the stream, used for operators with nonlinear cost such as sorts or hash joins.
 \end{enumerate}
 The percentage feature is the most important one.
@@ -326,13 +327,16 @@ Hence, T3 is an extremely fast performance prediction model~\parencite{t3}.
 
 \section{Related Work}
 
+The previous section introduced ZeroShot and T3 as the two models most relevant to this thesis.
+To provide context, this section surveys the broader landscape of performance prediction research.
+
 \paragraph{Main Memory System Cost Models.}
 Performance prediction has been a research challenge for decades.
 Listgarten and Neimat identify main-memory databases as a disruptive new technology and provide one of the first dedicated cost models for such systems~\parencite{listgarten}.
 Manegold et al.\ extend this line of work to hierarchical memory systems, proposing a generic approach to building cost models that account for cache, RAM, and disk access costs~\parencite{manegold}.
 
 Both works rely on hand-crafted analytical formulas rather than learned approaches.
-Thus, they predate the availability of the machine learning techniques used in modern performance prediction.
+They predate the availability of the machine learning techniques used in modern performance prediction.
 
 \paragraph{Early Learning-Based Methods.}
 Before neural networks became widespread, machine learning was already applied to performance prediction.
@@ -392,11 +396,11 @@ It transfers a representation trained on one task -- such as cost estimation -- 
 \paragraph{T3-Based Models with Different Feature Vectors.}
 Wehrstein et al.~\parencite{jobcomplex} also adapted the Umbra T3 model for PostgreSQL.
 They use a hybrid feature vector that takes the original Umbra feature vector, and maps matching PostgreSQL operators to Umbra operators.
-On top of that, they add additional features that are specific to PostgreSQL, like the Merge Join operator.
+On top of that, they add additional features from PostgreSQL that are missing in the original vector, like the Merge Join operator.
 
-However, their approach does not use fields that account for other relevant PostgreSQL-specific characteristics, like the planned workers or the estimated startup cost fields.
+However, their approach does not use fields that account for further PostgreSQL-specific characteristics, like the planned workers or the estimated startup cost fields (see Section~\ref{sec:methodology-implementation}).
+
 Our approach instead constructs a fully PostgreSQL-native feature vector from the ground up.
-Whether this design leads to better accuracy is investigated in this thesis.
 
 \paragraph{Evaluation of Learned Cost Models.}
 Heinrich et al.\ systematically evaluate seven state-of-the-art learned cost models (LCMs) -- FlatVector, MSCN, E2E, QPPNet, QueryFormer, ZeroShot, and DACE -- on three core query optimization tasks.
@@ -404,11 +408,12 @@ They evaluate join ordering, access path selection, and physical operator select
 
 Their key finding is that while LCMs outperform PostgreSQL's built-in estimator in cost estimation accuracy, this does not automatically translate into better plan selection.
 They find that high tail errors still cause poor plan choices in downstream optimization tasks.
-This concerns plan selection, not runtime prediction accuracy, and is therefore consistent with our results.
-For example, in our evaluation, PostgreSQL's built-in estimator achieves a median Q-Error of over 1000 for runtime prediction, far worse than all learned models.
 
-Our thesis focuses on prediction accuracy rather than plan selection, and this work confirms that prediction quality remains a meaningful and open research problem.
+Although our thesis focuses on prediction accuracy rather than plan selection, this work confirms that prediction quality remains a meaningful and open research problem.
 
+\paragraph{}
 Across this landscape, this thesis occupies a specific gap.
-None of the above works address whether T3's pipeline-based, decision tree approach -- designed for a compiled execution system -- transfers to an iterator-based system such as PostgreSQL, where pipelines are not a native execution concept.
+None of the above works address whether T3's pipeline-based, decision tree approach transfers to an iterator-based system such as PostgreSQL.
+T3 was designed for a compiled execution system where pipelines are a native concept -- a property that PostgreSQL does not share.
+To assess where our adapted model stands, we compare it against several of the models surveyed in this section (see Chapter~\ref{chapter:evaluation}).
 

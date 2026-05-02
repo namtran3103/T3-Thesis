@@ -15,22 +15,23 @@ Model training and evaluation for the results reported in this thesis were run o
 
 \paragraph{Accuracy and Generalization across Databases.}
 Figure~\ref{fig:database_q} shows the generalization capabilities of our model across different, unseen database instances.
-This is ensured by training the model on all databases except the one being tested.
+This is done by training the model on all databases except the one being tested.
 
 The median Q-Error (p50) stays below 1.33 for all databases,
 ranging from 1.07 (Walmart) to 1.32 (Basketball),
 indicating consistently good accuracy on unseen databases.
+They fall in the same range as the ZeroShot model~\parencite{zeroshot}.
+
 We observe that the p90 and average values show more variation across databases:
 p90 ranges from 1.30 (Walmart) to 3.32 (Basketball),
 and the average from 1.13 (Walmart) to 2.92 (Hepatitis).
 This reflects that a small number of harder-to-predict queries
 drive up the tail and mean errors for some databases.
-Despite the increased variation in the average and p90 values, we conclude that the model can generalize across unseen database instances within the ZeroShot workload.
-We scope this finding to the ZeroShot query pattern~\parencite{zeroshot}.
-Generalization to more structurally diverse queries remains untested and is addressed in the future work (Chapter~\ref{chapter:future_work}).
 
-Since we trained on the same data as the ZeroShot model, it is reasonable to compare the median values of our model to theirs.
-As their median values across databases are in the same range~\parencite{zeroshot}, we infer that our model has a comparable generalization performance.
+Despite the increased variation in the average and p90 values, we conclude that the model can generalize across unseen database instances within the ZeroShot workload.
+We scope this finding to the ZeroShot query patterns~\parencite{zeroshot}.
+Generalization to even more structurally diverse queries remains untested and is addressed in the future work (Chapter~\ref{chapter:future_work}).
+
 
 \paragraph{Frequency Distribution.}
 Figure~\ref{fig:qerror_freq} shows the Q-Error frequency distribution of our model on the JOB benchmark
@@ -60,9 +61,9 @@ while the average and p90 are more sensitive to a few hard-to-predict outliers.
 
 \paragraph{Comparison to T3 (Umbra) and ZeroShot.}
 
-The original T3 model for Umbra by Rieger and Neumann~\parencite{t3} and the ZeroShot model~\parencite{zeroshot} offer very good generalization performance across unseen databases.
-Because T3 (Umbra) uses different queries for generalization testing, we cannot directly compare the generalization performance of our model to theirs.
-But, Rieger \& Neumann compared both models on the JOB-Benchmark and reported excellent performance for both models~\parencite{t3}.
+T3 and the ZeroShot model~\parencite{zeroshot} offer very good generalization performance across unseen databases.
+Because T3 uses different queries for generalization testing, we cannot directly compare the generalization performance of our model to theirs.
+However, Rieger \& Neumann compared T3 and ZeroShot on the JOB-Benchmark and reported excellent performance for both models~\parencite{t3}.
 
 We also have JOB queries available for evaluation, so we can compare the models on that.
 In the original comparison, Rieger \& Neumann compare the p50, p90, and average Q-Error values.
@@ -71,7 +72,7 @@ They had all 113 JOB queries available for evaluation.
 However, the provided ZeroShot training data came with data limitations.
 Namely, longer-running queries are not included~\parencite{zeroshot}, so we only have 77 JOB queries available for evaluation.
 As the number of total queries differ, it is not sensible to compare the p50 and p90 Q-Error values directly.
-If the missing queries had a very high Q-Error, the p50 value of our model would be higher than now and using the current p50 value would be misleading.
+If the missing queries had a very high Q-Error, the p50 value of our model would increase and thus using the current p50 value would be misleading.
 This also applies to the p90 value.
 
 Considering how the median is calculated, we end up with the 57th-best Q-Error value when we take the p75 Q-Error of our model.
@@ -79,12 +80,12 @@ The 57th-highest Q-Error (p75) also corresponds to the p50 error of the ZeroShot
 Therefore, even if the missing queries had very high errors, the new p50 value would not get worse than the current p75 value.
 Hence, we can use it as a lower bound for the median performance of our model and compare it in Figure~\ref{fig:57th_comparison}.
 
-In this case, our model performs worse than the ZeroShot and T3 (Umbra) models on the JOB-Benchmark.
+There, our model performs worse than the ZeroShot and T3 (Umbra) models on the JOB-Benchmark.
 Using the current 57th-best (p75) value for comparison implies a worst-case-scenario for our model.
 With lower Q-Errors on the missing queries, the new 57th-highest (p50) value would be lower.
 
 To further narrow down the comparison, we also include the average Q-Error values in Figure~\ref{fig:avg_comparison}.
-Although we only have 70\% of the queries available for the calculation on our model, we still see a notable trend. 
+Although we only have 70\% of the JOB-queries available for the calculation on our model, we still see a notable trend. 
 Decision trees like T3 offer SOTA performance on average for Umbra, followed by ZeroShot.
 Our model, a T3-based implementation for PostgreSQL, tends to perform worse, but the difference on average is smaller than on percentiles.
 Thus, it is still a good starting point.
@@ -104,16 +105,16 @@ Thus, it is still a good starting point.
   Our model's average is calculated over 77 instead of 113 queries.}\label{fig:avg_comparison}
 \end{figure}
 
-\paragraph{T3-based Models with Different Feature Vectors.}
+\paragraph{T3-Based Models with Different Feature Vectors.}
 
 The comparison above used actual cardinalities to match the setup reported by Rieger \& Neumann~\parencite{t3}.
 Wehrstein et al. instead report their results using estimated cardinalities~\parencite{jobcomplex}, so we switch to estimated cardinalities here to ensure a fair comparison.
 They ran the JOB-Benchmark on their T3-based model and reported a median Q-Error of 4.07.
 Like before, they had the full 113 queries at disposal, so we again use the 57th-best (p75) Q-Error value for our model.
 
-Although we are in the worst-case-scenario, our model clearly outperforms Wehrstein et al.'s model, as Figure~\ref{fig:comp_wehrstein} shows.
+Although we are in the worst-case-scenario, our model clearly outperforms the model of Wehrstein et al., as Figure~\ref{fig:comp_wehrstein} shows.
 A key difference between the models is the used feature vector, where only our model uses a completely PostgreSQL-native feature vector.
-Hence, we demonstrate the relevance of PostgreSQL-native features.
+
 
 
 \begin{figure}[htpb]
@@ -135,7 +136,7 @@ Here, the best performing models are neural networks like ZeroShot~\parencite{ze
 Our model is in the top 4, coming in at 2.42, even under this worst-case comparison.
 The remaining models are neural network-based estimators, such as QPPNet~\parencite{qppnet}.
 They show a significant accuracy gap to the top performers, with 57th-best Q-Errors ranging from 8 to 18.
-Finally, PostgreSQL's untrained, built-in cost estimator performs worst by a very large margin at a 57th-best Q-Error of over 1000, confirming the need for learned approaches.
+Finally, PostgreSQL's untrained, built-in cost estimator performs worst by a very large margin at a 57th-best Q-Error of over 1000, stating the need for learned approaches.
 Regarding learned approaches, not only neural networks can perform well, but also decision trees like T3 for PostgreSQL.
 
 
@@ -163,15 +164,16 @@ Regarding learned approaches, not only neural networks can perform well, but als
 \section{Ablation Study}\label{sec:evaluation_ablation}
 \paragraph{Actual vs. Estimated Cardinalities.}
 
-Figure~\ref{fig:card_comparison} shows prediction accuracy under three cardinality conditions.
+Figure~\ref{fig:card_comparison} shows prediction accuracy under three cardinality conditions, aggregated over all queries.
 For each condition, we used the model variant trained under the matching setting.
-Therefore, for a query from database $X$, we used the model
-that was trained on all databases except $X$ and used the corresponding cardinality type.
+
+Therefore, for a query from database $x$, we used the model
+that was trained on all databases except $x$ and used the corresponding cardinality type.
 This ensures the correctness of the comparison.
 
 Using exact cardinalities for both training and evaluation gives the best results.
 This is a setting of our thesis, where we do not investigate the cardinality estimation issue.
-When, for the models trained on actual cardinalities, we switch to estimated cardinalities for evaluation, accuracy degrades.
+When, for the models trained on actual cardinalities, we switch to estimated cardinalities for inference, accuracy degrades.
 The median Q-Error increases only moderately,
 while the p90 and average Q-Error rise more sharply.
 Hence, it reflects that large cardinality estimation errors lead to large performance prediction errors
@@ -180,9 +182,9 @@ The same asymmetric degradation pattern has been observed for other performance 
 
 Training on estimated instead of exact cardinalities partially compensates for this effect.
 The model trained and evaluated on estimated cardinalities achieves
-a lower average Q-Error than the model trained on exact cardinalities but evaluated on estimated ones.
-Thus, this demonstrates that the model can somewhat learn to account for the systematic biases of the cardinality estimator~\parencite{leis2018job}.
-However, the p90 Q-Error stays at a similar, high level in both estimated-cardinality settings, indicating that a small number of heavy outliers remain.
+a lower average Q-Error than the model trained on exact cardinalities and evaluated on estimated ones.
+Thus, this indicates that the model can somewhat learn to account for the systematic biases of the cardinality estimator~\parencite{leis2018job}.
+However, the p90 Q-Error stays at a similar, high level in both estimated-cardinality settings, showing that a small number of heavy outliers remain.
 
 We conclude that incorrect cardinality estimates distort performance prediction accuracy substantially.
 Cardinality estimation remains an important and unsolved problem~\parencite{leis2018job},
@@ -197,9 +199,9 @@ and improvements in cardinality estimation would directly benefit performance pr
 
 \paragraph{Per-Query vs. Per-Pipeline vs. Per-Tuple Targets.}
 
-Figure~\ref{fig:query_pipeline_tuple} compares Q-Error across three prediction granularities:
+Figure~\ref{fig:query_pipeline_tuple} compares the Q-Error across three prediction granularities:
 per-query, per-pipeline, and per-tuple.
-This directly copies the evaluation of Rieger and Neumann~\parencite{t3},
+This copies the evaluation of Rieger and Neumann~\parencite{t3},
 who find that finer granularities consistently improve accuracy --
 with per-tuple being best and per-query being worst.
 We observe the opposite: the per-query model achieves the lowest Q-Error across all three metrics,
@@ -258,8 +260,8 @@ The correction factor rescales both pipeline times so their sum is correct on a 
 but it cannot determine how much of the 2{,}239ms truly belongs to P0 versus P1.
 
 The per-tuple approach, which divides the pipeline runtime into per-tuple runtimes, is additionally weakened by a difference in dataset characteristics.
-In T3, the query execution time span is larger than $10^{-5}$\,s to $10$\,s~\parencite{t3}.
-Thus, Rieger and Neumann identify this wide range as the primary motivation for the per-tuple approach.
+In T3, the per-tuple runtime distribution spans from $10^{-15}$\,s to $1$\,s -- a range of fifteen orders of magnitude~\parencite{t3}.
+Rieger and Neumann identify this wide range as the primary motivation for the per-tuple approach.
 Decision trees have a limited number of discrete leaf values and
 struggle to predict accurately over such a large range.
 Hence, normalizing by tuple count compresses the prediction target and improves accuracy~\parencite{t3}.
@@ -267,7 +269,7 @@ However, in our PostgreSQL dataset, query execution times span a much narrower r
 as visible in Figure~\ref{fig:query_runtime_hist}.
 
 With a narrower range and per-pipeline targets that are already noisy,
-the per-tuple decomposition provides no accuracy benefit and introduces additional label inaccuracies instead.
+the per-tuple decomposition provides no accuracy benefit.
 
 \begin{figure}[htpb]
   \centering

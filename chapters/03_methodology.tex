@@ -6,14 +6,14 @@
 
 \section{Problem Statement and Prediction Target}
 
-In this thesis, we address the transfer of the T3 runtime prediction approach from Umbra to PostgreSQL parsed plans.
+In this thesis, we address the transfer of the T3 runtime prediction approach from Umbra to PostgreSQL.
 The central methodological goal is to preserve T3’s good performance~\parencite{t3}.
 Thus, we use its main concepts and adapt plan conversion and feature extraction to PostgreSQL-specific plan information accordingly.
 
 The final prediction target is total query runtime.
 Each query plan is first decomposed into pipelines and a feature vector is computed for each pipeline.
 These per-pipeline feature vectors are then summed into a single query-level feature vector,
-from which the model directly predicts the total query runtime in one step.
+from which the model predicts the total query runtime.
 The pipeline decomposition is therefore used for feature extraction,
 not as a separate prediction unit.
 
@@ -27,14 +27,13 @@ Overall, the benchmark contains 20 databases with large variation in tables, col
 Having this multitude of databases allows us to test the generalization capabilities of our model.
 Similar to the T3 paper~\parencite{t3}, we can train the model on all but one database and test on the remaining one.
 Moreover, as the widely used JOB workload is included, we can compare our performance predictions to other implementations later on.
-Further, PostgreSQL is the intended database system of our implementation, which avoids the effort of building a separate PostgreSQL benchmark.
 
 Following the benchmark construction described in the ZeroShot paper, queries are generated per database and executed on a PostgreSQL DBMS.
 Then, they are stored as raw traces (i. e., the output of \texttt{EXPLAIN ANALYZE}).
 Next, the authors preprocess the queries to remove very long-running queries (queries above 30\,s are excluded) to keep the benchmark practical and reproducible.
 A further preprocessing step is to parse the raw traces into structured plan representations.
-These \texttt{parsed\_plans} contain the operator nodes found in the raw traces, but organize them in a tree structure with node-wise attributes.
-For every node, e.g., operator type, estimated/actual cardinalities, widths, and runtimes are stored in the \texttt{plan\_parameters} field~\parencite{zeroshot}.
+These parsed plans contain the operator nodes found in the raw traces, but organize them in a tree structure and gather node-wise attributes.
+For every node, e.g., operator type, estimated/actual cardinalities, widths, and runtimes are stored~\parencite{zeroshot}.
 
 The tree structure can be used to create pipelines and the node information will be used to train the model.
 Consequently, the parsed plans offer a good starting point for our pipeline and we can begin without further preprocessing.
@@ -88,7 +87,7 @@ Our feature vector differs from the original T3 feature vector in the following 
 
 \begin{enumerate}
   \item \textbf{PostgreSQL-native operator features.} The \texttt{parsed\_plans} expose PostgreSQL-native operator nodes. 
-  Thus, we add entries for these PostgreSQL-specific operators in the feature vector.
+  Thus, we add entries for all of these PostgreSQL-specific operators in the feature vector.
   
   Regarding stages, T3 derives stage assignments (Scan, Build, Probe, PassThrough) from Umbra-specific operator types and their position within the pipeline.
   In PostgreSQL, however, this information is already encoded in the node type itself.

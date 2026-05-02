@@ -11,10 +11,10 @@ which was designed to enable cost estimation that generalizes to unseen database
 rather than to cover the full spectrum of PostgreSQL query behavior~\parencite{zeroshot}.
 
 The ZeroShot training queries follow a narrow pattern of selective table scans,
-equi-joins, and a final aggregation to a single tuple~\parencite{zeroshot}.
+equi-joins (joins on equality predicates, i.\,e., \texttt{JOIN ON a = b}), and a final aggregation to a single tuple~\parencite{zeroshot}.
 In contrast, T3 generates training data from 16 distinct query structures,
 explicitly including complex selection predicates
-and all combinations of filters, joins, aggregations, and sorts~\parencite{t3}.
+and combinations of filters, joins, aggregations, and sorts~\parencite{t3}.
 These query types are largely absent from the ZeroShot training data,
 which limits how well our model can generalize to more diverse workloads.
 
@@ -24,55 +24,54 @@ Rieger and Neumann evaluated T3 on all 113 queries~\parencite{t3},
 making a direct like-for-like comparison on the full JOB benchmark impossible.
 
 Consequently, building a dedicated PostgreSQL benchmark in the style of T3's Umbra benchmark
-would close the query diversity gap and restore a full JOB comparison.
+would close the query diversity gap and enable a full JOB comparison.
 
 The runtime distribution of the ZeroShot data is also considerably narrower than T3's Umbra training data~\parencite{t3}.
-A dedicated benchmark covering a wider runtime range would allow the per-tuple prediction approach to be re-evaluated,
+A dedicated benchmark covering a wider runtime range could allow the per-tuple prediction approach to be re-evaluated,
 since T3's per-tuple normalization is specifically motivated by such a wide range~\parencite{t3}
 and our ablation study could not test this under comparable conditions (Section~\ref{sec:evaluation_ablation}).
 
-Moreover, a data gap is the absence of tablescan input cardinalities in the \texttt{parsed\_plans}.
+Moreover, a data gap is the absence of tablescan input cardinalities in the parsed ZeroShot plans.
 Our implementation always sets this value to 1, and the model compensates via the many other features.
 The estimated row count per table is available in PostgreSQL's system catalog \parencite{postgresql_docs_pg_class}.
 Future work should extend the data collection to record this information.
 
-\section{Feature Vector Extensions}
+\section{Feature Vector}
 
-\paragraph{Finer-grained pipeline features.}
+\paragraph{Finer-Grained Pipeline Features.}
 Currently, the pipeline-level block of our feature vector aggregates features across all nodes in a pipeline.
-For example, \texttt{workers\_planned} is summed over the pipeline.
+For example, the planned workers are summed over the pipeline.
 A natural extension is to expand the pipeline block with per-node entries,
 at the cost of a larger feature vector.
-This would let the model distinguish, for example, a pipeline where only one node is parallelized
+For example, this would let the model clearly distinguish a pipeline where only one node is parallelized
 from one where all nodes run in parallel.
 
-\paragraph{Purely query-level feature vector.}
+\paragraph{Purely Query-Level Feature Vector.}
 Per-query prediction outperforms per-pipeline and per-tuple prediction in our setting.
-Therefore, a future direction is to design the feature vector directly at the query level,
+Therefore, a future direction could be to design the feature vector directly at the query level,
 without the intermediate pipeline decomposition.
 This would further sidestep the PostgreSQL pipeline timing problem identified in the ablation study
 (Section~\ref{sec:evaluation_ablation}), while also simplifying the model pipeline.
 
-\paragraph{Joint pipeline and query context for pipeline-level prediction.}
+\paragraph{Joint Pipeline and Query Context for Pipeline-Level Prediction.}
 For the per-pipeline prediction approach, a possible extension is to provide
 two feature vectors per pipeline: one capturing only the local pipeline features,
 and one summarizing the full query context.
 This gives the model information about how a pipeline relates to the rest of the query,
 which may improve per-pipeline runtime prediction.
 
-\paragraph{PostgreSQL-specific features.}
-We include PostgreSQL planner cost estimates (\texttt{est\_cost}, \texttt{est\_startup\_cost})
-as features.
+\paragraph{PostgreSQL-Specific Features.}
+We include PostgreSQL planner cost estimates as features.
 However, the ablation study confirms that the PostgreSQL cost estimator is highly inaccurate
 for complex queries (median Q-Error above 1000, see Table~\ref{tab:median_qerror_job}).
 A targeted ablation study that removes or replaces these planner-cost features
 could determine whether they help or hurt prediction accuracy.
-More broadly, to assess the importance of individual features,
-future work can use LightGBM's built-in feature importance scores
-to identify which of the 153 dimensions drive the model's predictions.
+More broadly, to assess the importance of each PostgreSQL-native feature,
+future work can use LightGBM's built-in feature importance scores.
+Thereby, it could identify which features drive the model's predictions the most.
 
 
-\paragraph{Mitigating the pipeline timing issue.}
+\paragraph{Mitigating the Pipeline Timing Issue.}
 The pipeline timing problem identified in the ablation study arises because
 PostgreSQL's \texttt{EXPLAIN ANALYZE} reports cumulative wall-clock intervals per node,
 not exclusive execution times~\parencite{postgresql_docs_explain}.
@@ -80,8 +79,8 @@ A node's reported interval includes time spent waiting for its children,
 which causes intervals to overlap across pipeline boundaries.
 
 Hence, a thorough long-term approach would be to modify PostgreSQL's executor instrumentation to track exclusive CPU time per node directly.
-This would require extending the executor's timing hooks to subtract child contribution at collection time,
-giving ground-truth per-node exclusive times without any heuristic.
+PostgreSQL already exposes per-node timing hooks through its instrumentation layer~\parencite{postgresql_docs_explain}.
+Extending these hooks to subtract child contribution at collection time would yield exclusive per-node times.
 Such instrumentation could then serve as the basis for a dedicated benchmark that collects richer timing data than the current ZeroShot dataset provides.
 
 \section{Prediction Latency}
@@ -92,7 +91,7 @@ Rieger and Neumann note that T3's low prediction latency is a key practical adva
 Future work should benchmark the prediction latency of our PostgreSQL model
 to confirm its performance,
 and to compare it directly against T3's reported latency~\parencite{t3}.
-A concrete step toward this would be to compile the trained LightGBM model to native machine code using the \texttt{lleaves} framework, as T3 does~\parencite{t3}.
+A concrete step toward this would be to compile our trained LightGBM model to native machine code using the \texttt{lleaves} framework, as T3 does~\parencite{t3}.
 T3 already demonstrates that this compilation step reduces inference latency from 22\,\textmu{}s to approximately 4\,\textmu{}s, and our model could benefit from the same approach.
 
 % --- ORIGINAL NOTES (for review) ---

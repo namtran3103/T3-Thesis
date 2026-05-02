@@ -654,8 +654,8 @@
       \strng{authornamehash}{3ae53fe582e8a815b118d26947eaa326}
       \strng{authorfullhash}{3ae53fe582e8a815b118d26947eaa326}
       \strng{authorfullhashraw}{3ae53fe582e8a815b118d26947eaa326}
-      \field{sortinit}{3}
-      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{title}{Deep Learning}
@@ -831,8 +831,8 @@
       \strng{authornamehash}{0fd788250a2bc43bdb32336f6efda1bd}
       \strng{authorfullhash}{0fd788250a2bc43bdb32336f6efda1bd}
       \strng{authorfullhashraw}{0fd788250a2bc43bdb32336f6efda1bd}
-      \field{sortinit}{4}
-      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{title}{Classification and Regression Trees}
@@ -855,8 +855,8 @@
       \strng{authornamehash}{ce884cc144616c39e723a8fe2eb3c879}
       \strng{authorfullhash}{ce884cc144616c39e723a8fe2eb3c879}
       \strng{authorfullhashraw}{ce884cc144616c39e723a8fe2eb3c879}
-      \field{sortinit}{4}
-      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{The Annals of Statistics}
@@ -1216,8 +1216,8 @@
       \strng{authornamehash}{b08564f393d1e3b019be55eabf142f0a}
       \strng{authorfullhash}{c4232c3d05fda09f51b10abd09c4788b}
       \strng{authorfullhashraw}{c4232c3d05fda09f51b10abd09c4788b}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Proc. VLDB Endow.}
@@ -1383,8 +1383,8 @@
       \strng{authornamehash}{e467a93bea5cf31f8c085827b3e0904e}
       \strng{authorfullhash}{97bf1a15e95c4871283ae27b6840ca1b}
       \strng{authorfullhashraw}{97bf1a15e95c4871283ae27b6840ca1b}
-      \field{sortinit}{8}
-      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Proc. ACM Manag. Data}
