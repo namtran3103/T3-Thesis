@@ -1394,22 +1394,6 @@
       \verb 10.1145/3725309
       \endverb
     \endentry
-    \entry{postgresql_docs_pg_class}{manual}{}{}
-      \list{organization}{1}{%
-        {The {PostgreSQL} Global Development Group}%
-      }
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
-      \field{labeltitlesource}{title}
-      \field{title}{{PostgreSQL} 18 Documentation: System Catalogs -- {pg\_class}}
-      \field{year}{2025}
-      \verb{urlraw}
-      \verb https://www.postgresql.org/docs/18/catalog-pg-class.html
-      \endverb
-      \verb{url}
-      \verb https://www.postgresql.org/docs/18/catalog-pg-class.html
-      \endverb
-    \endentry
     \entry{postgresql_docs_explain}{manual}{}{}
       \list{organization}{1}{%
         {The {PostgreSQL} Global Development Group}%
@@ -1424,6 +1408,22 @@
       \endverb
       \verb{url}
       \verb https://www.postgresql.org/docs/18/sql-explain.html
+      \endverb
+    \endentry
+    \entry{postgresql_docs_pg_class}{manual}{}{}
+      \list{organization}{1}{%
+        {The {PostgreSQL} Global Development Group}%
+      }
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{title}{{PostgreSQL} 18 Documentation: System Catalogs -- {pg\_class}}
+      \field{year}{2025}
+      \verb{urlraw}
+      \verb https://www.postgresql.org/docs/18/catalog-pg-class.html
+      \endverb
+      \verb{url}
+      \verb https://www.postgresql.org/docs/18/catalog-pg-class.html
       \endverb
     \endentry
   \enddatalist

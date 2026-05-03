@@ -42,25 +42,20 @@ Consequently, the parsed plans offer a good starting point for our pipeline and 
 
 \section{Plan Representation}
 
-We start from one element, i. e., one plan, of the \texttt{parsed\_plans} array in the benchmark JSON files.
-An object in the array is a rooted tree: every node carries \texttt{plan\_parameters} (operator name, estimated and actual cardinalities, 
-estimated tuple width, planner costs, optional filter predicates, timings, and further fields) and a list \texttt{children} of child subtrees.
+Each parsed plan is a rooted tree of operator nodes, where every node carries per-operator attributes such as cardinalities, costs, widths, and timings.
 
+We convert this tree recursively into the same nested operator structure that the original T3 implementation expects for Umbra plans~\parencite{t3}.
+PostgreSQL operator names are mapped to a small set of abstract operator types that T3 uses internally for pipeline assignment.
 
-We convert this tree recursively into the same nested operator structure
-that the original T3 implementation expects
-for Umbra plans~\parencite{t3}.
-PostgreSQL operator names are mapped to abstract operators (\texttt{tablescan}, \texttt{join}, \texttt{sort}, and \texttt{groupby} nodes).
+For joins, the child order is normalized so that the build subtree becomes the left child and the probe subtree the right child, matching T3's pipeline rules.
 
-Regarding joins, the child order is normalized so that it matches T3's pipeline rules: i. e., the PG-build subtree becomes the \emph{left} child and the PG-probe subtree the \emph{right} child.
-
-Since the feature vector uses the PostgreSQL-native features and operators of the \texttt{parsed\_plans}, we need to keep the original, not converted \texttt{plan\_parameters} available for the feature extraction.
-Hence, the converted abstract operator names are only used to match the internal T3 representation for pipeline assignment, but not for the feature extraction.
+Since the feature vector uses PostgreSQL-native attributes, the original per-node attributes are preserved alongside the converted abstract structure.
+The abstract operator types serve only for pipeline assignment; feature extraction reads directly from the original PostgreSQL-native attributes.
 
 \section{Pipeline Decomposition}
 
 Umbra plans group operators into \emph{pipelines}: sets of operators that can produce tuples in a pipelined fashion, separated by \emph{pipeline breakers}. 
-Namely these are operators/stages, where data is materialized. For instance, sorting, grouping, or materialization, but also the build side of a hash join~\parencite{t3}.
+Namely, these are operators/stages where data is materialized. For instance, sorting, grouping, or materialization, but also the build side of a hash join~\parencite{t3}.
 
 Since PostgreSQL plans do not provide such a pipeline breakdown, we need to derive it from the converted tree.
 We assign each node to a pipeline by walking the converted tree with the same high-level rules as in the original T3 implementation~\parencite{t3}.
@@ -70,15 +65,16 @@ Joins place the build side in one pipeline and keep the join together with the p
 \section{Feature Vector Design}\label{sec:methodology-implementation}
 
 We retain the pipeline decomposition for feature extraction rather than opting for a complete query-level feature vector for three reasons.
+
 By mirroring T3's pipeline-based feature design~\parencite{t3},
-we can use the same pipeline-centric features such as operator percentages, which are only well-defined within a pipeline boundary.
+we can use the same pipeline-centric features such as operator percentages, which are defined within a pipeline boundary.
 Further, following T3's ablation study, which includes per-pipeline predictions, we can compare prediction granularities more thoroughly in Section~\ref{sec:evaluation_ablation}.
 Finally, PostgreSQL-specific issues affect the per-pipeline and per-tuple approaches
-in our setting, as discussed in the evaluation (Section~\ref{sec:evaluation_ablation});
-the decomposition keeps the model extensible so that future work can address those issues.
+in our setting, as discussed in the evaluation (Section~\ref{sec:evaluation_ablation}).
+The decomposition keeps the model extensible so that future work can address those issues.
 
-The original T3 feature mapper for Umbra builds a feature vector from execution phases within each pipeline (e.g.\ scan, build, probe phases) and from cardinalities and tuple sizes attached to those phases~\parencite{t3}.
-On the other hand, PostgreSQL plans contain different data, so we construct the feature vector for each pipeline after the pipeline decomposition described above.
+The original T3 feature mapper for Umbra builds a feature vector from execution phases within each pipeline (e.g.\ scan, build, probe phases), as well as from cardinalities and tuple sizes attached to those phases~\parencite{t3}.
+Since ZeroShot plans contain PostgreSQL-specific data, we construct the feature vector for each pipeline differently, after the pipeline decomposition described above.
 
 Once the feature vector is constructed, we can train the model.
 Our feature vector differs from the original T3 feature vector in the following ways:
@@ -86,50 +82,42 @@ Our feature vector differs from the original T3 feature vector in the following 
 
 
 \begin{enumerate}
-  \item \textbf{PostgreSQL-native operator features.} The \texttt{parsed\_plans} expose PostgreSQL-native operator nodes. 
-  Thus, we add entries for all of these PostgreSQL-specific operators in the feature vector.
+  \item \textbf{PostgreSQL-Native Operator Features.} The ZeroShot data exposes PostgreSQL-native operator nodes. 
+  Thus, we add entries for all occurring operators in the feature vector.
   
-  Regarding stages, T3 derives stage assignments (Scan, Build, Probe, PassThrough) from Umbra-specific operator types and their position within the pipeline.
-  In PostgreSQL, however, this information is already encoded in the node type itself.
-  Where Umbra represents both phases of a hash join as a single \texttt{HashJoin} operator appearing in two separate pipelines with different stages, PostgreSQL exposes them as two distinct plan nodes -- a \texttt{Hash} node for the build side and a \texttt{Hash Join} node for the probe side.
-  A stage feature is therefore redundant in the PostgreSQL representation, and we omit it accordingly.
-  Instead, we aggregate features only per operator.
-  \item \textbf{PostgreSQL planner cost estimates.} We include sums and extrema of PostgreSQL's \texttt{est\_cost} and \texttt{est\_startup\_cost} from \texttt{plan\_parameters} in the feature vector.
-  These are optimizer-internal estimates of work and startup cost and are an additional PostgreSQL-specific signal that is not available in the Umbra feature vector.
-  Consequently, we can include this information in the feature vector.
-  \item \textbf{Planned parallelism.} Another PostgreSQL-specific signal is the planned parallelism. So, we take the sum of \texttt{workers\_planned} over all operators in the pipeline.
-  Hereby, we include a parallelism signal in our feature vector.
+  
+  \item \textbf{PostgreSQL Planner Cost Estimates.} We include sums and extrema of PostgreSQL's cost estimates in the feature vector.
+  They are optimizer-internal estimates of work and startup cost per node and are an additional PostgreSQL-specific signal that is not available in the Umbra plans.
+  \item \textbf{Planned Parallelism.} Another PostgreSQL-specific signal is the planned parallelism. Thus, we take the sum of planned workers over all operators in the pipeline.
+  This provides a dedicated parallelism signal in our feature vector.
   \item \textbf{Sizes.} T3 uses the size of output tuples in bytes for materializing operators~\parencite{t3}.
   In Umbra, T3 derives the tuple size by summing the per-attribute byte sizes from the operator's IU (information unit) list,
   giving a precise estimate of the tuple byte width.
-  PostgreSQL provides a direct semantic equivalent: \texttt{est\_width},
-  the planner's estimated average output row width in bytes per node.
-  We therefore use \texttt{est\_width} as the tuple size for each operator.
-  The main difference to the Umbra approach is that \texttt{est\_width} is a pre-aggregated planner estimate
-  rather than a sum of per-attribute type metadata.
+  PostgreSQL provides a direct semantic equivalent: the estimated average output row width in bytes per node (est\_width).
+  We therefore use it as the tuple size for each operator.
+  The main difference to the Umbra approach is that it is a pre-aggregated planner estimate~\parencite{postgresql_docs_explain}
+  rather than a precise sum of per-attribute type metadata.
 \end{enumerate}
 
-In the Umbra feature vector of T3, rows are indexed by both operator type and execution phase (scan, build, probe, \ldots) like \texttt{HashJoin\_Probe\ldots}~\parencite{t3}.
-Now with the PostgreSQL implementation, we miss out on the execution phase dimension.
+Regarding stages, T3 derives stage assignments (Scan, Build, Probe, PassThrough) from Umbra-specific operator types and their position within the pipeline.
+In PostgreSQL, however, this information is already encoded in the node type itself.
+Umbra represents both phases of a hash join as a single HashJoin operator appearing in two separate pipelines with different stages.
+In contrast, PostgreSQL exposes them as two distinct plan nodes -- a Hash node for the build side and a Hash Join node for the probe side.
+A stage feature is therefore redundant in the PostgreSQL representation, and we omit it accordingly.
+Thus, we use operator-level features.
 
-Whereas not an equivalent substitute, we replace this information with a pipeline-level dimension and keep the operator-level features for the individual operators.
-The pipeline-level block produces additional metadata in a compact manner, e.g., by using averages and sums over operators.
+Furthermore, we add pipeline-level features.
+They produce additional metadata in a compact manner, e.g., by using averages and sums over operators.
 For instance, we consider planned parallelism, width, and cost estimates per pipeline and not per operator.
 Thus, the feature vector stays more compact.
 
-Each pipeline's feature vector consists of two concatenated blocks: pipeline-level aggregates and an operator-level block.
-
-In total, the feature vector is fixed and has 153 dimensions (23 pipeline-level features and 130 operator-type features).
-Empty features are zeroed to keep the feature vector dimension.
-
-Regarding the cardinalities, either the actual or the estimated cardinalities are used in the feature vector, depending on which is selected in training.
-
-Once the feature vectors for all pipelines are constructed, we get the feature matrix for the whole plan.
+Regarding cardinalities, either actual or estimated cardinalities are used throughout the feature vector, depending on the training and inference configuration.
+Full details of the feature vector layout are provided in Chapter~\ref{chapter:implementation}.
 
 
 \section{Training}
 
-We keep T3's LightGBM decision tree setup~\parencite{t3} and use the newly constructed PostgreSQL-native feature matrix.
+We keep T3's LightGBM decision tree setup~\parencite{t3} and use the newly constructed vectors.
 A main difference is that we predict the total query runtime directly,
 rather than predicting individual pipeline durations.
 
@@ -140,7 +128,7 @@ This per-query prediction approach was found to perform best for our PostgreSQL 
 as demonstrated in the ablation study (see Section~\ref{sec:evaluation_ablation}).
 
 In T3~\parencite{t3}, the training target is the per-tuple execution time for each individual pipeline instead,
-and the predicted pipeline times are summed to obtain the query runtime.
+and the predicted pipeline times (gathered from the per-tuple predictions) are summed to obtain the query runtime.
 We evaluate all three granularities -- per-query, per-pipeline, and per-tuple --
 in the ablation study and discuss why per-query works best for our case.
 
@@ -149,7 +137,7 @@ The booster is trained with a mean absolute percentage error (MAPE) objective on
 in line with the original T3 work~\parencite{t3}.
 
 Furthermore, we use the same training parameters as in the original T3 work~\parencite{t3}.
-Hence, the pipeline duration targets $t$ are transformed as $-\log(t)$ to stabilize training.
+Hence, the prediction targets $t$ are transformed as $-\log(t)$ to stabilize training.
 Also following T3, we cap the number of boosting rounds at 200 trees to mitigate overfitting.
 
 Regarding the training data, we mirror T3's train/validation split.
@@ -158,7 +146,7 @@ The default seed used for shuffling the training data is 42.
 
 Concerning the train/test split, we match the training intention of the ZeroShot benchmark~\parencite{zeroshot} and of T3's cross-instance evaluation~\parencite{t3}.
 Both aim to measure whether the trained model transfers to an unseen database instance.
-Thus, we use a leave-one-out split on the \texttt{parsed\_plan} files:
+Thus, we use a leave-one-out split on the ZeroShot data:
 one instance is held out as the test set and all other instances form the training data.
 
 

@@ -14,7 +14,7 @@ Because SQL describes the desired result and not the retrieval procedure, the DB
 When a DBMS receives an SQL query, it processes the query in three successive phases~\parencite{silberschatz2019}:
 
 \begin{enumerate}
-  \item \textbf{Parsing and translation.}
+  \item \textbf{Parsing and Translation.}
   The SQL text is checked for syntactic correctness and translated into an internal relational-algebra expression.
   During this step, the parser also expands any \emph{view} references -- a view is a named, stored query that acts as a virtual table -- by substituting them with their underlying relational-algebra definition.
 
@@ -111,7 +111,7 @@ The following are typical examples of pipeline breakers~\parencite{t3}:
 \begin{enumerate}
   \item \textbf{Sort.} A sort operator cannot emit a single sorted tuple until it has collected and sorted all input tuples.
   \item \textbf{Aggregation.} A group-by operator must accumulate all input tuples into groups before it can emit any aggregated result.
-  \item \textbf{Hash join (build side).} The build side of a hash join must be fully read into a hash table before any tuple from the probe side can be matched.
+  \item \textbf{Hash Join (Build Side).} The build side of a hash join must be fully read into a hash table before any tuple from the probe side can be matched.
     The build side therefore forms its own pipeline, terminating at the hash table.
 \end{enumerate}
 

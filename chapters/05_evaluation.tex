@@ -93,7 +93,7 @@ Thus, it is still a good starting point.
 \begin{figure}[htpb]
   \centering
   \includegraphics[width=0.7\textwidth]{figures/57th_comparison.png}
-  \caption[57th-best Q-Error Comparison between T3 (Umbra), ZeroShot, and Our Model]{57th-best Q-Error on the Join Order Benchmark for T3 (Umbra), ZeroShot, and our model.
+  \caption[57th-Best Q-Error Comparison between T3 (Umbra), ZeroShot, and Our Model]{57th-best Q-Error on the Join Order Benchmark for T3 (Umbra), ZeroShot, and our model.
   Values for T3 (Umbra) and ZeroShot are taken from Rieger \& Neumann~\parencite{t3}}\label{fig:57th_comparison}
 \end{figure}
 
@@ -113,7 +113,7 @@ They ran the JOB-Benchmark on their T3-based model and reported a median Q-Error
 Like before, they had the full 113 queries at disposal, so we again use the 57th-best (p75) Q-Error value for our model.
 
 Although we are in the worst-case-scenario, our model clearly outperforms the model of Wehrstein et al., as Figure~\ref{fig:comp_wehrstein} shows.
-A key difference between the models is the used feature vector, where only our model uses a completely PostgreSQL-native feature vector.
+A key difference between the models is the feature vector: only our model uses a fully PostgreSQL-native feature vector.
 
 
 
@@ -158,7 +158,7 @@ Regarding learned approaches, not only neural networks can perform well, but als
     Our model       & 2.42    \\
     \bottomrule
   \end{tabular}
-  \caption[57th-best Q-Error on JOB across different Models]{57th-best Q-Error on the Join Order Benchmark (JOB) across different models, data from Wehrstein et al.~\parencite{jobcomplex}. For all models except ours, this equals the median (p50), as they are evaluated on the full 113 JOB queries. Our model is evaluated on 77 queries, so its 57th-best value corresponds to p75 -- a conservative lower bound for its true median. Estimated cardinalities.}\label{tab:median_qerror_job}
+  \caption[57th-Best Q-Error on JOB across Different Models]{57th-best Q-Error on the Join Order Benchmark (JOB) across different models, data from Wehrstein et al.~\parencite{jobcomplex}. For all models except ours, this equals the median (p50), as they are evaluated on the full 113 JOB queries. Our model is evaluated on 77 queries, so its 57th-best value corresponds to p75 -- a conservative lower bound for its true median. Estimated cardinalities.}\label{tab:median_qerror_job}
 \end{table}
 
 \section{Ablation Study}\label{sec:evaluation_ablation}
